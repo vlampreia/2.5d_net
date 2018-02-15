@@ -1,0 +1,72 @@
+node backend
+  db
+  socketio
+  auth
+    login
+
+js frontend
+  canvas
+  ui
+    configurable
+    link w/ interpreter
+    views
+      multiple windows
+        main window for command and control
+        ancilliary views for readonly information?
+      navigation
+      tactical
+      situational
+        sensors
+          only mechanism for observing outside ship
+        relative velocity
+          selectable reference frame
+            useful for tactics and optimising ordinance delivery
+      configure
+      comms
+  ctrl
+    script
+      script engine (limited js? custom? what?)
+    cmd interpreter
+
+game
+  what is this game?
+    concept
+      far far future
+        ancient tech
+          think wh40k
+        fragmented factions
+          player "represents" or plays as part of faction
+            player dies, dies forever
+              revive as new element of faction
+            faction dies, player loses
+    mechanics
+      salvage
+        found ancients
+        other players
+        other random
+      configurabilty
+        scripting
+        ship config
+          personnel
+          architecture
+        industry
+          mining
+          production
+          market
+      combat
+        full phyics simulation
+          particle trajectories
+        weapon performance dependent on multiple physical/situational aspects
+      damage model
+        ship can take damage anywhere
+          affects modules, module performance
+            sensors
+  universe
+    pcg
+      systems
+        planets
+        stars
+        satellites
+        minor bodies
+      objects
+        ships
