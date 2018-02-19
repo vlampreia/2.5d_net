@@ -9,6 +9,7 @@ import PlayerControlledComponent from './components/playerControlledComponent.js
 import ModuleHostComponent from './components/moduleHostComponent.js'
 import ModuleComponent from './components/moduleComponent.js'
 import StarbaseComponent from './components/starbaseComponent.js'
+import PlanetComponent from './components/planetComponent.js'
 
 import PlayerControllerSystem from './systems/playerController.js'
 import TransformFollowerSystem from './systems/transformFollowerSystem.js'
@@ -33,6 +34,7 @@ class Game {
       ModuleHostComponent,
       ModuleComponent,
       StarbaseComponent,
+      PlanetComponent,
     }
     Object.values(this.component_classes)
       .forEach((c) => this.engine._ecs.register_component_class(c))
@@ -53,6 +55,8 @@ class Game {
     events.on('ui_action', this.handle_ui_event.bind(this))
     events.on('build', this.deserialise_object.bind(this))
     events.on('player_disconnect', this.handle_player_disconnect.bind(this))
+    events.on('generate_planet', this.handle_generate_planet.bind(this))
+    events.on('select_planet', this.handle_select_planet.bind(this))
     events.on(E.WINDOW_RESIZE, this.resize_listener.bind(this))
 
     this.camera = this.create_camera()
@@ -77,6 +81,14 @@ class Game {
       pos: new Vector(10, 80)
     })
     this.engine.gui_system.add_element(this.targeting)
+    
+    this.ui_planet_info = new GUI_TextBox({
+      text: '',
+      fg_colour: 'rgb(0, 0, 0)',
+      bg_colour: 'rgb(255, 255, 255)',
+      pos: new Vector(10, 140),
+    })
+    this.engine.gui_system.add_element(this.ui_planet_info)
 
     this.targeted = new GUI_TextBox({
       text: 'targeted: ',
@@ -112,6 +124,51 @@ class Game {
     this.engine.gui_system.add_element(this.txtbox)
 
     this.render_bg()
+
+    const planet_event = {
+      entity: {
+        entity_id: -400,
+      },
+      components: [
+        {
+          type: 'TransformComponent',
+          data: {
+            pos: {
+              x: 300,
+              y: 300,
+            },
+          },
+        },
+        {
+          type: 'RenderableComponent',
+          data: {
+            asset: 'planet',
+          },
+        },
+        {
+          type: 'BoundsComponent',
+          data: {
+            width: 100,
+            height: 100,
+          },
+        },
+        {
+          type: 'PlanetComponent',
+          data: {
+            data: {
+              radius: 50,
+              surface_temp: 10,
+              azm: 2.4,
+            },
+          },
+        },
+      ],
+    }
+
+    this.engine.event_manager.push_event({
+      event_type: 'generate_planet',
+      e: planet_event,
+    })
   }
 
   join_game() {
@@ -175,6 +232,14 @@ class Game {
       })
     }
 
+    const pl = this.engine._ecs.get_entity_component(entity, PlanetComponent)
+    if (pl) {
+      this.engine.event_manager.push_event({
+        event_type: 'select_planet',
+        e: { action: 'select_planet', entity: entity, planet: pl }
+      })
+    }
+
     console.log('send target ', entity.entity_id)
     this.engine.event_manager.push_event({
       event_type: 'player_action',
@@ -191,15 +256,22 @@ class Game {
     }
   }
 
+  handle_select_planet(e) {
+    console.log('select planet ev', e)
+    this.ui_planet_info.set_text(JSON.stringify(e.planet, 0, 2))
+  }
+
   create_camera() {
     const ecs = this.engine._ecs
 
     const entity = ecs.create_entity()
 
-    const transform = ecs.set_entity_component(entity, new BaseComponents.TransformComponent())
+    const transform = ecs
+      .set_entity_component(entity, new BaseComponents.TransformComponent())
     transform.pos = new Vector(0, 0, 0)
 
-    const camera = ecs.set_entity_component(entity, new BaseComponents.CameraComponent())
+    const camera = ecs
+      .set_entity_component(entity, new BaseComponents.CameraComponent())
     camera.scale = 1
 
     return entity
@@ -220,7 +292,8 @@ class Game {
     const entity = this.engine._ecs.create_entity()
     entity.entity_id = player.client_id
 
-    const transform = this.engine._ecs.set_entity_component(entity, new BaseComponents.TransformComponent())
+    const transform = this.engine
+      ._ecs.set_entity_component(entity, new BaseComponents.TransformComponent())
     transform.pos = new Vector(player.pos.x, player.pos.y, 1)
 
     const rc = new BaseComponents.RenderableComponent()
@@ -278,11 +351,16 @@ class Game {
     this.systems.transform_follower.update()
   }
 
+  handle_generate_planet(e) {
+    const ev = {e}
+    this.deserialise_object(ev)
+  }
+
   deserialise_object(e) {
     const description = e.e
 
-    const entity = this.engine._ecs.create_entity()
-    entity.entity_id = description.entity.entity_id
+    const entity = this.engine._ecs.create_entity(description.entity.entity_id)
+    //entity.entity_id = description.entity.entity_id
 
     description.components.forEach((component) => {
       const c = this.engine._ecs.get_component_class(component.type)
@@ -338,6 +416,26 @@ class Game {
     bgcanvas.height = window.innerHeight
     ctx.fillStyle = 'rgb(0, 0, 0)'
     ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
+
+    for (let i=0; i<8; ++i) {
+      const min = 230
+      const max = 255
+      const a = (i+1) / 9
+      const max_stars = 1000
+
+      for (let j=0; j<(8-i)*500; ++j) {
+        const r = ~~(Math.random() * (max - min + 1)) + min
+        const g = ~~(Math.random() * (max - min + 1)) + min
+        const b = ~~(Math.random() * (max - min + 1)) + min
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`
+
+        const x = ~~(Math.random() * bgcanvas.width)
+        const y = ~~(Math.random() * bgcanvas.height)
+
+        ctx.fillRect(x, y, 1, 1)
+      }
+    }
+
     this.engine.renderer.draw_to_background(bgcanvas)
   }
 }
@@ -347,7 +445,7 @@ class GUI_TextBox extends GuiElement {
     super()
 
     this.auto_scale = true
-    this.font = '12px mono'
+    this.font = '12px Consolas'
     this.font_size = 12
     this.text = text || ''
     this.bg_colour = bg_colour || ''
@@ -362,7 +460,6 @@ class GUI_TextBox extends GuiElement {
 
   set_text(text) {
     this.text = text
-    //this.fit_scale()
     this.dirty = true
   }
 
@@ -376,8 +473,8 @@ class GUI_TextBox extends GuiElement {
     if (this.auto_scale) {
       lines.forEach((line) => {
         const d = ctx.measureText(line)
-        if (d.width > width) { width = d.width }
-        height = 12 * 1.1 * lines.length
+        if (d.width > width) { width = ~~d.width }
+        height = ~~(12 * 1.1 * lines.length)
       })
     } else {
       width = this.dim.x

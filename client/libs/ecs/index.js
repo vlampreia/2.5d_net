@@ -16,7 +16,7 @@ class ECS {
     this.component_classes = {}
   }
 
-  create_entity() {
+  create_entity(entity_id) {
     let entity = null
     let id = -1
 
@@ -26,6 +26,8 @@ class ECS {
       entity = new Entity(this.entities.length)
       this.entities.push(entity)
     }
+
+    entity.entity_id = entity_id
 
     this.systems.forEach((system) => system.offer_entity(entity))
 
