@@ -103,12 +103,12 @@ class Game {
     this.players = []
 
     this.txtbox = new GUI_TextBox({})
-    this.txtbox.pos = new Vector(10, 40)
-    //this.txtbox.dim = new Vector(100, 30)
+    this.txtbox.pos = new Vector(0, 0)
     this.txtbox.fg_colour = 'rgb(0, 0, 0)'
     this.txtbox.bg_colour = 'rgb(255, 255, 255)'
-    //this.txtbox.text = 'hello'
-    this.txtbox.set_text('hello u')
+    this.txtbox.set_text('hello')
+    this.txtbox.anchor.horizontal = 'centre'
+    this.txtbox.anchor.vertical = 'centre'
     this.engine.gui_system.add_element(this.txtbox)
 
     this.render_bg()

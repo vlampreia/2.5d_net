@@ -30,10 +30,14 @@ class GuiElement {
 
     if (this.anchor.horizontal === 'right') {
       x = ctx.canvas.width - x - this.dim.x
+    } else if (this.anchor.horizontal === 'centre') {
+      x = (ctx.canvas.width / 2) - x - (this.dim.x / 2)
     }
 
     if (this.anchor.vertical === 'bottom') {
-      y = ctx.canvas.height - y
+      y = ctx.canvas.height + y
+    } else if (this.anchor.vertical === 'centre') {
+      y = (ctx.canvas.height / 2) - y - this.dim.y /2 
     }
 
     ctx.drawImage(this.canvas, x, y)
