@@ -28,8 +28,9 @@ class windowEventManager {
 
     Object.keys(window_event_map).forEach((src_event) => {
       window.addEventListener(src_event, (e) => {
+        if (e.repeat) { return }
         this.event_manager.push_event({ event_type: window_event_map[src_event], e })
-      })
+      }, false)
     })
 
     this.listening = true

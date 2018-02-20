@@ -31,8 +31,10 @@ class PlayerController extends System {
           console.log('bad time!')
         } else{
           transformComponent.pos_prev.x = transformComponent.pos.x
+          transformComponent.pos_prev.y = transformComponent.pos.y
           transformComponent.pos_prev_time = transformComponent.time
           transformComponent.pos_next.x = e.e.pos.x
+          transformComponent.pos_next.y = e.e.pos.y
           transformComponent.pos_next_time = e.server_send_timestamp
         }
         //  transformComponent.lasttime = 0

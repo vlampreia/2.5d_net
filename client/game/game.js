@@ -52,7 +52,7 @@ class Game {
 
     const events = this.engine.event_manager
     events.on(E.MOUSE_DOWN, this.handle_mouse_down.bind(this))
-    events.on('player_action', this.handle_player_action.bind(this))
+    events.on('in_player_move', this.handle_player_action.bind(this))
     events.on('TARGET_ENTITY', this.handle_target_event.bind(this))
     events.on('player_join', this.create_player_entity.bind(this))
     events.on('player_dock', (stuff) => { console.log(stuff) })
@@ -363,7 +363,7 @@ class Game {
   }
 
   handle_player_action(e, timestamp) {
-    this.engine.network.enqueue_event('player_action', { timestamp, e })
+    this.engine.network.enqueue_event('in_player_move', { timestamp, e })
   }
 
   handle_ui_event(e) {

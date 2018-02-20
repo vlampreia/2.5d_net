@@ -154,15 +154,18 @@ class Engine {
     this._ecs.components.TransformComponent.forEach((t) => {
       if (time  < t.pos_prev_time ) {
         t.pos.x = t.pos_prev.x
+        t.pos.y = t.pos_prev.y
         t.time = t.pos_prev_time
-        console.log('early')
+        ////console.log('early')
       } else if (time > t.pos_next_time) {
-        console.log('late', time - t.pos_next_time, time, t.pos_next_time)
+        //console.log('late', time - t.pos_next_time, time, t.pos_next_time)
         t.pos.x = t.pos_next.x
+        t.pos.y = t.pos_next.y
         t.time = t.pos_next_time
       } else {
         const xt = (time - t.pos_prev_time) / (t.pos_next_time - t.pos_prev_time)
         t.pos.x = t.pos_prev.x + ((t.pos_next.x - t.pos_prev.x) * xt)
+        t.pos.y = t.pos_prev.y + ((t.pos_next.y - t.pos_prev.y) * xt)
         t.time = t.pos_prev_time + ((t.pos_next_time - t.pos_prev_time) * xt)
       }
 

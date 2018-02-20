@@ -30,6 +30,10 @@ class Server {
       'player_action', this.handle_player_action.bind(this)
     )
 
+    this.event_manager.add_listener(
+      'in_player_move', this.handle_player_move_action.bind(this)
+    )
+
     //this.network.add_listener('player_action', (e) => {
     //  this.event_manager.push_event('player_action', { e })
     //})
@@ -63,32 +67,90 @@ class Server {
     this.event_manager.dispatch_events()
 
     this.accumulator += timestep
-    let work = false
     while (this.accumulator >= timestep) {
       this.players.forEach((player) => {
-        if (player.vel) {
-          if (player.vel.x) {
-            /* semi-implicit euler */
-            // player.vel = player.acc
-            work = true
-            const vel = player.vel.x * timestep
-            player.pos.x += vel * timestep
-            //console.log(player.pos.x)
+        /* semi-implicit euler */
+
+      player.acc.x = (1 * player.move_right) + (-1 * player.move_left)
+      player.acc.y = (1 * player.move_down) + (-1 * player.move_up)
+
+          const min = 0.0001
+        if (!player.move_left && !player.move_right) {
+          if (Math.abs(player.vel.x) < min) { player.vel.x = 0}
+          else {
+          if (player.vel.x > 0) {
+            player.acc.x = -1
+          } else if (player.vel.x < 0){
+            player.acc.x = 1
+          }
+
           }
         }
+        if (!player.move_up && !player.move_down) {
+          if (Math.abs(player.vel.y) < min) { player.vel.y = 0}
+          else {
+          if (player.vel.y > 0) {
+            player.acc.y = -1
+            } else if (player.vel.y < 0){
+            player.acc.y = 1
+          }
+
+          }
+        }
+
+    const mag = Math.sqrt(player.acc.x * player.acc.x + player.acc.y * player.acc.y)
+    if (mag) {
+      player.acc.x /= mag
+      player.acc.y /= mag
+    }
+
+    const acc = 0.001
+    player.acc.x *= acc
+    player.acc.y *= acc
+
+        player.vel.x += player.acc.x * timestep
+        player.vel.y += player.acc.y * timestep
+
+        const max = 0.01
+        if (player.vel.x >   max) { player.vel.x =   max}
+        if (player.vel.x < - max) { player.vel.x = - max}
+        if (player.vel.y >   max) { player.vel.y =   max}
+        if (player.vel.y < - max) { player.vel.y = - max}
+
+        //let vm = Math.sqrt(player.vel.x * player.vel.x + player.vel.y * player.vel.y)
+        //if (vm <= timestep * acc * timestep) {
+        //  player.vel.x = 0
+        //  player.vel.y = 0
+        //}
+        //console.log(Math.abs(player.vel.x))
+        //const min = 0.000001
+        //if (Math.abs(player.vel.x) < min) { player.vel.x = 0}
+        //if (Math.abs(player.vel.y) < min) { player.vel.y = 0}
+
+
+        player.pos.x += player.vel.x * timestep
+        player.pos.y += player.vel.y * timestep
+
+        //console.log(player.pos.x)
       });
       this.accumulator -= timestep
     }
 
 
     if (frame_start_time - this.last_net_update >= this.net_time_step) {
+      const work = true
     if (work) {
       this.players.forEach((player) => {
-        this.network.enqueue_msg_bc('player_move', {
-          client_id: player.client_id,
-          pos: player.pos,
-          vel: player.vel
-        });
+        if (player.pos.x !== player.prev_pos.x || player.pos.y !== player.prev_pos.y) {
+          player.prev_pos.x = player.pos.x
+          player.prev_pos.y = player.pos.y
+          this.network.enqueue_msg_bc('player_move', {
+            client_id: player.client_id,
+            pos: player.pos,
+            acc: player.acc,
+            vel: player.vel
+          });
+        }
       })
     }
       this.last_net_update = frame_start_time
@@ -113,10 +175,22 @@ class Server {
         x: 50,
         y: 50,
       },
+      prev_pos: {
+        x: 50,
+        y: 50,
+      },
       vel: {
         x: 0,
         y: 0,
       },
+      acc: {
+        x: 0,
+        y: 0,
+      },
+      move_left: 0,
+      move_right: 0,
+      move_up: 0,
+      move_down: 0
     }
 
     this.players.forEach((existing_player) => {
@@ -188,14 +262,6 @@ class Server {
     if (!player) { return }
 
     switch (e.e.action) {
-      case 'MOVE_LEFT':
-        return this.move_player(player, -10, 0)
-      case 'MOVE_RIGHT':
-        return this.move_player(player, 10, 0)
-      case 'MOVE_UP':
-        return this.move_player(player, 0, -10)
-      case 'MOVE_DOWN':
-        return this.move_player(player, 0, 10)
       case 'PLACE_BLOCK':
         return this.place_block({ client_id, e })
       case 'REQ_TARGET_ENTITY':
@@ -207,16 +273,35 @@ class Server {
     }
   }
 
-  move_player(player, x, y) {
-    player.vel.x = 1
-    //player.pos.x += x
-    //player.pos.y += y
+  handle_player_move_action({ client_id, e }) {
+    console.log(client_id)
+    const player = this.players.find(p => p.client_id === client_id )
+    if (!player) { return }
 
-    //this.network.enqueue_msg_bc('player_move', {
-    //  client_id: player.client_id,
-    //  pos: player.pos,
-    //  vel: player.vel
-    //})
+    switch (e.e.action) {
+      case 'MOVE_LEFT':
+        player.move_left = (e.e.state > 0); break
+      case 'MOVE_RIGHT':
+        player.move_right = (e.e.state > 0) ; break
+      case 'MOVE_UP':
+        player.move_up = (e.e.state > 0); break
+      case 'MOVE_DOWN':
+        player.move_down = (e.e.state > 0) ;break
+      default:
+        return
+    }
+
+    //const acc = 0.001
+
+    //player.acc.x = (1 * player.move_right) + (-1 * player.move_left)
+    //player.acc.y = (1 * player.move_down) + (-1 * player.move_up)
+
+    //const mag = Math.sqrt(player.acc.x * player.acc.x + player.acc.y * player.acc.y)
+    //if (!mag) { return }
+    //player.acc.x /= mag
+    //player.acc.y /= mag
+    //player.acc.x *= acc
+    //player.acc.y *= acc
   }
 
   place_block({ client_id, e }) {

@@ -78,6 +78,7 @@ class Network {
   }
 
   broadcast_message(event_type, e) {
+    console.log('broadcast', event_type, JSON.stringify(e))
     Object.keys(this.clients).forEach((ck) => {
       this.clients[ck].emit(event_type, e)
     })

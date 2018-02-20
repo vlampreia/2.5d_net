@@ -13,6 +13,7 @@ class PlayerControlledComponent extends Component {
   }
 
   enqueue_player_move(e) {
+    console.log(e.e.client_id)
     if (e.e.client_id !== this._client_id) { return }
 
     this.event_queue.push(e)
