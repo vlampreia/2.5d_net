@@ -42,8 +42,16 @@ class GuiSystem {
   }
 
   draw_cursor(ctx) {
-    ctx.fillStyle = 'rgb(200, 50, 255)'
-    ctx.fillRect(this.mouse_pos.x - 1, this.mouse_pos.y - 1, 3, 3)
+    /* line stroke coords must be on boundary pixel for crisp lines */
+    ctx.strokeStyle = 'rgb(200, 50, 255)'
+    ctx.strokeWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(this.mouse_pos.x  + 0.5, 0                  + 0.5)
+    ctx.lineTo(this.mouse_pos.x  + 0.5, this.canvas.height + 0.5)
+    ctx.moveTo(0                 + 0.5, this.mouse_pos.y   + 0.5)
+    ctx.lineTo(this.canvas.width + 0.5, this.mouse_pos.y   + 0.5)
+    ctx.stroke()
+    //ctx.fillRect(this.mouse_pos.x - 1, this.mouse_pos.y - 1, 3, 3)
   }
 }
 

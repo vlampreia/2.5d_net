@@ -4,6 +4,7 @@ import { System } from 'ecs'
 import TransformComponent from '../base_components/transformComponent.js'
 import RenderableComponent from '../base_components/renderableComponent.js'
 import CameraComponent from '../base_components/cameraComponent.js'
+import Vector from 'common'
 
 class RenderSystem extends System {
   constructor(render_system, camera_entity) {
@@ -29,7 +30,7 @@ class RenderSystem extends System {
     //this.render_system.render_frame(1)
   }
 
-  process_entities(entities) {
+  process_entities(entities, t, dt) {
     // TODO: we are effectively retrieving the transform components twice
     // which looks inefficient. We can probably prescan the entity list and
     // append transform components before calling super.process_entities.
@@ -44,12 +45,20 @@ class RenderSystem extends System {
     super.process_entities(sorted_entities)
   }
 
-  process_entity(entity, { transformComponent, renderableComponent }) {
+  process_entity(entity, t, dt, { transformComponent, renderableComponent }) {
     //const transf_pos = this.camera.world_to_screen_pos(transformComponent.pos)
+
+    const dims = new Vector(
+      renderableComponent.canvas.width,
+      renderableComponent.canvas.height
+    )
 
     const transf_pos = transformComponent.pos
       .mul_f(this.camera_opt.scale)
-      .sub_v(this.camera_pos.pos.mul_f(this.camera_opt.scale).sub_v(this.camera_opt.view_centre))
+      .sub_v(
+        this.camera_pos.pos.mul_f(this.camera_opt.scale)
+          .sub_v(this.camera_opt.view_centre)
+      ).sub_v(dims.div_f(2))
 
     /* ctx.setTransform()
      * a - hotizontal scaling

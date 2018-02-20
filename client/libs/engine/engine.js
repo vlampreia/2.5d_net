@@ -104,8 +104,8 @@ class Engine {
     this._simulation_hook_fn = fn
   }
 
-  call_simulation_hook() {
-    if (this._simulation_hook_fn) { this._simulation_hook_fn() }
+  call_simulation_hook(t, dt) {
+    if (this._simulation_hook_fn) { this._simulation_hook_fn(t, dt) }
   }
 
   set_render_hook(fn) {
@@ -128,14 +128,15 @@ class Engine {
 
     /* perform simulation steps */
     const sim_t1 = Date.now()
+
     while (this.frame_stats.accumulator >= this.frame_consts.frame_time_step) {
       // phys sim by timestep
-      this.call_simulation_hook()
+      this.call_simulation_hook(frame_start_time, this.frame_consts.frame_time_step)
 
       this.frame_stats.accumulator -= this.frame_consts.frame_time_step
-      if (this.frame_stats.accumulator >= this.frame_consts.frame_time_step * 200) {
-        this.frame_stats.accumulator = 0
-      }
+      //if (this.frame_stats.accumulator >= this.frame_consts.frame_time_step * 200) {
+      //  this.frame_stats.accumulator = 0
+      //}
     }
     const sim_t2 = Date.now()
 
@@ -145,6 +146,31 @@ class Engine {
       this.network.dequeue_msgs(frame_start_time)
       this.network.dequeue_events(frame_start_time)
     }
+
+      //const time = (this.frame_stats.accumulator /
+      //  this.frame_consts.frame_time_step)
+
+    const time = frame_start_time - 100
+    this._ecs.components.TransformComponent.forEach((t) => {
+      if (time  < t.pos_prev_time ) {
+        t.pos.x = t.pos_prev.x
+        t.time = t.pos_prev_time
+        console.log('early')
+      } else if (time > t.pos_next_time) {
+        console.log('late', time - t.pos_next_time, time, t.pos_next_time)
+        t.pos.x = t.pos_next.x
+        t.time = t.pos_next_time
+      } else {
+        const xt = (time - t.pos_prev_time) / (t.pos_next_time - t.pos_prev_time)
+        t.pos.x = t.pos_prev.x + ((t.pos_next.x - t.pos_prev.x) * xt)
+        t.time = t.pos_prev_time + ((t.pos_next_time - t.pos_prev_time) * xt)
+      }
+
+
+//      if (!t.pos2.x || !t.pos1.x) { return }
+//      t.pos.x = t.pos2.x + ((t.pos1.x - t.pos2.x) * (1-time))
+      //t.pos.x = t.pos1.x * time + t.pos2.x * (1-time)
+    });
 
     /* render */
     const render_t1 = Date.now()

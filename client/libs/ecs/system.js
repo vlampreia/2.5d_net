@@ -27,14 +27,14 @@ class System {
   setup() { return true }
   teardown() {}
 
-  update() {
+  update(t, dt) {
     const cont = this.setup()
     if (!cont) { return }
-    this.process_entities(this._entities)
+    this.process_entities(this._entities, t, dt)
     this.teardown()
   }
 
-  process_entities(entities) {
+  process_entities(entities, t, dt) {
     entities.forEach((entity) => {
       const components = {}
 
@@ -45,7 +45,7 @@ class System {
         components[friendly_string] = c
       })
 
-      this.process_entity(entity, components)
+      this.process_entity(entity, t, dt, components)
     })
   }
 

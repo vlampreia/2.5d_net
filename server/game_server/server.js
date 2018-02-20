@@ -54,7 +54,7 @@ class Server {
 
   main_loop() {
     const max_fps = 60
-    const timestep = 1000/max_fps
+    const timestep = 1/max_fps
 
     const frame_start_time = Date.now()
     let frame_time = frame_start_time - this.last_frame_start_time
@@ -63,11 +63,34 @@ class Server {
     this.event_manager.dispatch_events()
 
     this.accumulator += timestep
+    let work = false
     while (this.accumulator >= timestep) {
+      this.players.forEach((player) => {
+        if (player.vel) {
+          if (player.vel.x) {
+            /* semi-implicit euler */
+            // player.vel = player.acc
+            work = true
+            const vel = player.vel.x * timestep
+            player.pos.x += vel * timestep
+            //console.log(player.pos.x)
+          }
+        }
+      });
       this.accumulator -= timestep
     }
 
+
     if (frame_start_time - this.last_net_update >= this.net_time_step) {
+    if (work) {
+      this.players.forEach((player) => {
+        this.network.enqueue_msg_bc('player_move', {
+          client_id: player.client_id,
+          pos: player.pos,
+          vel: player.vel
+        });
+      })
+    }
       this.last_net_update = frame_start_time
     }
 
@@ -89,7 +112,11 @@ class Server {
       pos: {
         x: 50,
         y: 50,
-      }
+      },
+      vel: {
+        x: 0,
+        y: 0,
+      },
     }
 
     this.players.forEach((existing_player) => {
@@ -134,7 +161,7 @@ class Server {
         }
       ]
     }
-    this.network.enqueue_msg(client_id, 'build', build_ev)
+    //this.network.enqueue_msg(client_id, 'build', build_ev)
 
     this.players.push(p)
 
@@ -181,13 +208,15 @@ class Server {
   }
 
   move_player(player, x, y) {
-    player.pos.x += x
-    player.pos.y += y
+    player.vel.x = 1
+    //player.pos.x += x
+    //player.pos.y += y
 
-    this.network.enqueue_msg_bc('player_move', {
-      client_id: player.client_id,
-      pos: player.pos
-    })
+    //this.network.enqueue_msg_bc('player_move', {
+    //  client_id: player.client_id,
+    //  pos: player.pos,
+    //  vel: player.vel
+    //})
   }
 
   place_block({ client_id, e }) {

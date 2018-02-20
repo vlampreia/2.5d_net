@@ -10,9 +10,11 @@ import ModuleHostComponent from './components/moduleHostComponent.js'
 import ModuleComponent from './components/moduleComponent.js'
 import StarbaseComponent from './components/starbaseComponent.js'
 import PlanetComponent from './components/planetComponent.js'
+import VelocityComponent from './components/velocityComponent.js'
 
 import PlayerControllerSystem from './systems/playerController.js'
 import TransformFollowerSystem from './systems/transformFollowerSystem.js'
+import MotionSystem from './systems/motionSystem.js'
 
 import Vector from 'common'
 
@@ -24,6 +26,7 @@ class Game {
     this.systems = {
       player_controller: new PlayerControllerSystem(this.event_manager),
       transform_follower: new TransformFollowerSystem(),
+      motion_system: new MotionSystem(),
     }
     Object.values(this.systems)
       .forEach((s) => this.engine._ecs.push_system(s))
@@ -35,6 +38,7 @@ class Game {
       ModuleComponent,
       StarbaseComponent,
       PlanetComponent,
+      VelocityComponent,
     }
     Object.values(this.component_classes)
       .forEach((c) => this.engine._ecs.register_component_class(c))
@@ -81,7 +85,7 @@ class Game {
       pos: new Vector(10, 80)
     })
     this.engine.gui_system.add_element(this.targeting)
-    
+
     this.ui_planet_info = new GUI_TextBox({
       text: '',
       fg_colour: 'rgb(0, 0, 0)',
@@ -113,15 +117,6 @@ class Game {
     this.engine.gui_system.add_element(this.input_text)
 
     this.players = []
-
-    this.txtbox = new GUI_TextBox({})
-    this.txtbox.pos = new Vector(0, 0)
-    this.txtbox.fg_colour = 'rgb(0, 0, 0)'
-    this.txtbox.bg_colour = 'rgb(255, 255, 255)'
-    this.txtbox.set_text('hello')
-    this.txtbox.anchor.horizontal = 'centre'
-    this.txtbox.anchor.vertical = 'centre'
-    this.engine.gui_system.add_element(this.txtbox)
 
     this.render_bg()
 
@@ -165,10 +160,10 @@ class Game {
       ],
     }
 
-    this.engine.event_manager.push_event({
-      event_type: 'generate_planet',
-      e: planet_event,
-    })
+    //this.engine.event_manager.push_event({
+    //  event_type: 'generate_planet',
+    //  e: planet_event,
+    //})
   }
 
   join_game() {
@@ -221,7 +216,9 @@ class Game {
         return this.engine._ecs.get_entity_component(module, ModuleComponent)
       })
 
-      //if (modules) { this.selected_ui.modules = JSON.stringify(modules) }
+      if (modules) { 
+        this.ui_planet_info.set_text(JSON.stringify(modules, 0, 2))
+      }
     }
 
     const sbase = this.engine._ecs.get_entity_component(entity, StarbaseComponent)
@@ -277,17 +274,6 @@ class Game {
     return entity
   }
 
-  //render_gui(ctx) {
-  //  //ctx.fillText('selected_entity: ' + this.selected_ui.text, 100, 100)
-  //  ctx.fillText('modules: ' + this.selected_ui.modules, 100, 120)
-  //  ctx.fillText('we are targeting:   ' + this.selected_ui.targeting, 10, 140)
-  //  ctx.fillText('we are targeted by: ' + this.selected_ui.targeted, 10, 160)
-  //  ctx.fillText('we are:             ' + this.engine.network.client_id, 10, 180)
-
-  //  if (this.show_input) {
-  //  }
-  ///}
-
   create_player_entity(player) {
     const entity = this.engine._ecs.create_entity()
     entity.entity_id = player.client_id
@@ -321,6 +307,9 @@ class Game {
     const pc = new PlayerControlledComponent(player.client_id, this.engine.event_manager)
     this.engine._ecs.set_entity_component(entity, pc)
 
+    const vc = new VelocityComponent()
+    this.engine._ecs.set_entity_component(entity, vc)
+
     const bc = new BaseComponents.BoundsComponent(20, 30)
     this.engine._ecs.set_entity_component(entity, bc)
 
@@ -346,9 +335,10 @@ class Game {
     player.entity = entity
   }
 
-  engine_simulation_hook() {
-    this.systems.player_controller.update()
-    this.systems.transform_follower.update()
+  engine_simulation_hook(t, dt) {
+    this.systems.player_controller.update(t, dt)
+    //this.systems.transform_follower.update(t, dt)
+    this.systems.motion_system.update(t, dt)
   }
 
   handle_generate_planet(e) {

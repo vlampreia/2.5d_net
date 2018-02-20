@@ -9,7 +9,7 @@ class TransformFollowerSystem extends System {
     super([ BaseComponents.TransformComponent, TransformFollowerComponent ])
   }
 
-  process_entity(entity, { transformComponent, transformFollowerComponent }) {
+  process_entity(entity, t, dt, { transformComponent, transformFollowerComponent }) {
     const target_pos = this.ecs.get_entity_component(
       transformFollowerComponent.entity_to_follow,
       BaseComponents.TransformComponent
