@@ -1,0 +1,12 @@
+{
+  "name": "common",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/vector.js",
+  "types": "dist/vector.d.ts",
+  "scripts": {
+    "build": "tsc -d"
+  },
+  "author": "",
+  "license": "ISC"
+}

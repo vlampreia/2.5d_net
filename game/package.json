@@ -1,0 +1,13 @@
+{
+  "name": "game",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "common": "file:../libs/common",
+    "ecs": "file:../libs/ecs",
+    "engine": "file:../libs/engine"
+  }
+}

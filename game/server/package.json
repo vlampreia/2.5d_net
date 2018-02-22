@@ -1,0 +1,21 @@
+{
+  "name": "game_server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "socket.io": "^2.0.4",
+    "uuid": "^3.2.1",
+    "ecs": "file:../../libs/ecs",
+    "engine": "file:../../libs/engine"
+  },
+  "devDependencies": {
+    "ts-loader": "^3.5.0",
+    "typescript": "^2.7.2"
+  }
+}

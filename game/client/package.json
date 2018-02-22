@@ -1,0 +1,26 @@
+{
+  "name": "client_server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "debug": "^3.1.0",
+    "common": "file:../../libs/common",
+    "ecs": "file:../../libs/ecs",
+    "engine": "file:../../libs/engine",
+    "socket.io-client": "^2.0.4",
+    "uuid": "^3.2.1",
+    "webpack": "^3.10.0"
+  },
+  "devDependencies": {
+    "ts-loader": "^3.5.0",
+    "typescript": "^2.7.2"
+  }
+}
