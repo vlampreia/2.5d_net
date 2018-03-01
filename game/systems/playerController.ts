@@ -5,12 +5,13 @@ import { BaseComponents } from 'engine'
 import Vector from 'common'
 import PlayerControlledComponent from '../components/playerControlledComponent'
 import VelocityComponent from '../components/velocityComponent'
+import AccelerationComponent from '../components/accelerationComponent'
 
 class PlayerController extends System {
   event_manager
 
   constructor(event_manager) {
-    super([ BaseComponents.TransformComponent, VelocityComponent, PlayerControlledComponent ])
+    super([ BaseComponents.TransformComponent, VelocityComponent, AccelerationComponent, PlayerControlledComponent ])
 
     this.event_manager = event_manager
   }

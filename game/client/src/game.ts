@@ -12,10 +12,14 @@ import PlanetComponent from '../../components/planetComponent'
 import VelocityComponent from '../../components/velocityComponent'
 import PlayerNetworkUpdateComponent from '../../components/playerNetworkUpdateComponent'
 import AccelerationComponent from '../../components/accelerationComponent'
+import PlayerControlledComponent from '../../components/playerControlledComponent'
+import WaypointComponent from '../../components/waypointComponent'
 
 import PlayerNetworkUpdateSystem from '../../systems/playernetworkUpdateSystem'
 import TransformFollowerSystem from '../../systems/transformFollowerSystem'
 import MotionSystem from '../../systems/motionSystem'
+import PlayerController from '../../systems/playerController'
+import WaypointSystem from '../../systems/waypointSystem'
 
 import Vector from 'common'
 
@@ -31,6 +35,45 @@ class Game {
   ui_planet_info
   targeted
   input_text
+    //this.blocks.forEach(b => this.network.enqueue_msg(client_id, 'place_block', { block: b }))
+    //this.network.enqueue_msg(client_id, )
+    //
+    //const build_ev = {
+    //  entity: {
+    //    entity_id: -500,
+    //  },
+    //  components: [
+    //    {
+    //      type: 'TransformComponent',
+    //      data: {
+    //        pos: { x: 100, y: 50, z: 50 }
+    //      }
+    //    },
+    //    {
+    //      type: 'RenderableComponent',
+    //      data: {
+    //        asset: 'default'
+    //      }
+    //    },
+    //    {
+    //      type: 'BoundsComponent',
+    //      data: {
+    //        width: 20,
+    //        height: 20,
+    //      }
+    //    },
+    //    {
+    //      type: 'StarbaseComponent',
+    //      data: {
+    //        dockable: true,
+    //        dock_capacity: 2,
+    //        docked_count: this.starbases[0].docked
+    //      }
+    //    }
+    //  ]
+    //}
+    //this.network.enqueue_msg(client_id, 'build', build_ev)
+
   players
   targeting
 
@@ -42,6 +85,8 @@ class Game {
       player_network: new PlayerNetworkUpdateSystem(this.event_manager),
       transform_follower: new TransformFollowerSystem(),
       motion_system: new MotionSystem(),
+      waypoint_system: new WaypointSystem(),
+      //player_controller: new PlayerController(this.event_manager),
     }
     Object.values(this.systems)
       .forEach((s) => this.engine._ecs.push_system(s))
@@ -55,6 +100,8 @@ class Game {
       PlanetComponent,
       VelocityComponent,
       AccelerationComponent,
+      WaypointComponent,
+      //PlayerControlledComponent
     }
     Object.values(this.component_classes)
       .forEach((c) => this.engine._ecs.register_component_class(c))
@@ -180,6 +227,12 @@ class Game {
     //  event_type: 'generate_planet',
     //  e: planet_event,
     //})
+    //
+    this.engine.event_manager.push_event('player_join', {
+      pos: { x: 50, y: 50 },
+      client_id: this.engine.network.client_id})
+
+    this.selected_entity = null;
   }
 
   join_game() {
@@ -204,7 +257,7 @@ class Game {
         .sub_v(camera_opt.view_centre)
       )
       .div_f(camera_opt.scale)
-      .sub_f(this.cell_width / 2)
+      //.sub_f(this.cell_width / 2)
 
     //const world_pos = this.camera.screen_to_world_pos(this.engine.mouse_pos)
     //  .sub_f(this.cell_width/2)
@@ -215,9 +268,19 @@ class Game {
       return this.handle_select_entity(selected_entity)
     }
 
-    const pos = world_pos.div_f(this.cell_width).round().mul_f(this.cell_width)
+    this.handle_move_entity(this.selected_entity, world_pos)
+
+    //const pos = world_pos.div_f(this.cell_width).round().mul_f(this.cell_width)
+    //this.engine.event_manager.push_event(
+    //  'player_action', { action: 'PLACE_BLOCK', pos }
+    //)
+
+
+  }
+
+  handle_move_entity(entity, pos) {
     this.engine.event_manager.push_event(
-      'player_action', { action: 'PLACE_BLOCK', pos }
+      'player'
     )
   }
 
@@ -331,6 +394,9 @@ class Game {
     const bc = new BaseComponents.BoundsComponent(20, 30)
     this.engine._ecs.set_entity_component(entity, bc)
 
+    //const pcc = new PlayerControlledComponent(player.client_id, this.engine.event_manager)
+    //this.engine._ecs.set_entity_component(entity, pcc)
+
     //const mh = new ModuleHostComponent()
     //this.engine._ecs.set_entity_component(entity, mh)
 
@@ -356,7 +422,8 @@ class Game {
   engine_simulation_hook(t, dt) {
     this.systems.player_network.update(t, dt)
     //this.systems.transform_follower.update(t, dt)
-    this.systems.motion_system.update(t, dt)
+    this.systems.motion_system.update(t, dt) //this.systems.player_controller.update(t, dt)
+    this.systems.waypoint_system.update(t, dt)
   }
 
   handle_generate_planet(e) {

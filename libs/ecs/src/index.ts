@@ -44,6 +44,10 @@ class ECS {
   }
 
   set_entity_component(entity, component) {
+    if (!(this.components.hasOwnProperty(component.get_type()))) {
+      throw(new Error(`component "${component.get_type()}" must be registered before assigning to entity`))
+    }
+
     this.components[component.get_type()][entity.id] = component
 
     this.systems.forEach((system) => system.offer_entity(entity))
