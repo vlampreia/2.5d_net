@@ -239,16 +239,16 @@ class Game {
 
   create_boxes() {
     const ps = [
-      new Vector(-200, -200,   56),
-      new Vector(-200, -100,  56),
-      new Vector(-200, 0,  56),
-      new Vector(-100, -200,  56),
-      new Vector(-100, -100,   56),
-      new Vector(-100, 0,  56),
-      new Vector(0, -200,  56),
-      new Vector(0, -100,  56),
+      new Vector(-80, -80,   56),
+      new Vector(-80, -40,  56),
+      new Vector(-80, 0,  56),
+      new Vector(-40, -80,  56),
+      new Vector(-40, -40,   56),
+      new Vector(-40, 0,  56),
+      new Vector(0, -80,  56),
+      new Vector(0, -40,  56),
       new Vector(0, 0, 56),
-    ].map(v => v.div_f(4))
+    ]//.map(v => v.div_f(3))
 
     for (let i=0; i<ps.length; ++i) {
       const e = this.engine._ecs.create_entity()
@@ -279,11 +279,55 @@ class Game {
       ctx.moveTo(width / 2, height / 2)
       ctx.lineTo(width / 2, height)
       ctx.stroke()
-      ctx.fillStyle = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 / ((i+1) / ps.length))}`
-      ctx.fill()
+      ctx.fillStyle = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 * ((ps.length - (i)) / ps.length))}`
+      //ctx.fill()
       //ctx.strokeRect(0, 0, width, height)
       //ctx.fillRect(0, 0, 10, 10)
+      ctx.fillStyle = 'rgb(255, 255, 255)'
+      ctx.fillRect(width / 2 - 1, height / 2 - 1, 3, 3)
     }
+
+    const make_isometric_cube = (x, y, width, height, depth) => {
+      const e = this.engine._ecs.create_entity()
+      const t = this.engine._ecs.set_entity_component(e, new BaseComponents.TransformComponent())
+      const r = this.engine._ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
+      t.time = -1
+      t.pos = new Vector(x, y, 0)
+      t.pos_prev = t.pos
+      t.pos_next = t.pos
+      r.canvas = document.createElement('canvas')
+      const xwidth = width
+      const ywidth = depth
+      const rheight = height
+      const canvas_width = xwidth + ywidth
+      const canvas_height = rheight + xwidth / 2 + ywidth / 2
+      r.canvas.width = canvas_width
+      r.canvas.height = canvas_height
+      const ctx = r.canvas.getContext('2d')
+      //ctx.strokeStyle = `rgb(255, 255, 255)`
+      //ctx.strokeRect(0, 0, width, height)
+      ctx.strokeStyle = `rgb(0, 255, 0)`
+      ctx.beginPath()
+
+      ctx.moveTo(0, ywidth / 2)
+      ctx.lineTo(0, ywidth / 2 + rheight)
+      ctx.lineTo(xwidth, rheight + xwidth * 0.5 + ywidth * 0.5)
+      ctx.lineTo(xwidth + ywidth, rheight + xwidth * 0.5)
+      ctx.lineTo(xwidth + ywidth, xwidth * 0.5)
+      ctx.lineTo(ywidth, 0)
+      ctx.lineTo(0, ywidth / 2)
+      ctx.lineTo(xwidth, xwidth * 0.5 + ywidth * 0.5)
+      ctx.lineTo(xwidth + ywidth, xwidth * 0.5)
+      ctx.moveTo(xwidth, xwidth * 0.5 + ywidth * 0.5)
+      ctx.lineTo(xwidth, rheight + xwidth * 0.5 + ywidth * 0.5)
+
+      ctx.stroke()
+      //ctx.fill()
+      ctx.fillStyle = 'rgb(255, 255, 255)'
+      ctx.fillRect(canvas_width / 2 - 1, canvas_height / 2 - 1, 3, 3)
+    }
+
+    make_isometric_cube(40, 40, 20 * 5, 20, 20 * 3)
   }
 
   join_game() {
