@@ -278,12 +278,23 @@ class Game {
     const camera_opt = this.engine._ecs
       .get_entity_component(this.camera, BaseComponents.CameraComponent)
 
-    const world_pos = this.engine.mouse_pos
-      .add_v(camera_pos.pos
+    let world_pos = this.engine.mouse_pos
+      world_pos = world_pos.add_v(camera_pos.pos
         .mul_f(camera_opt.scale)
         .sub_v(camera_opt.view_centre)
       )
       .div_f(camera_opt.scale)
+      world_pos.x = (world_pos.x + world_pos.y * 2) / 2
+      world_pos.y = -(world_pos.x - world_pos.y * 2) / 1
+
+
+    console.log('click at ', world_pos)
+    //const world_pos = this.engine.mouse_pos
+    //  .add_v(camera_pos.pos
+    //    .mul_f(camera_opt.scale)
+    //    .sub_v(camera_opt.view_centre)
+    //  )
+    //  .div_f(camera_opt.scale)
       //.sub_f(this.cell_width / 2)
 
     //const world_pos = this.camera.screen_to_world_pos(this.engine.mouse_pos)

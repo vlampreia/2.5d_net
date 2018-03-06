@@ -48,9 +48,6 @@ class IsometricRenderSystem extends System {
   process_entity(entity, t, dt, { transformComponent, renderableComponent }) {
     const buffer = this.render_system.buffer_ctx
 
-    const world_dims = this.camera_opt.view_dim
-    const iso_offset = new Vector(world_dims.x, world_dims.y, 0).div_f(2)
-
     const dims = new Vector(
       renderableComponent.canvas.width,
       renderableComponent.canvas.height,
@@ -61,13 +58,11 @@ class IsometricRenderSystem extends System {
       transformComponent.pos.x - transformComponent.pos.y,
       (transformComponent.pos.x + transformComponent.pos.y)/2,
       0
-    )
-      .mul_f(this.camera_opt.scale)
+    ) .mul_f(this.camera_opt.scale)
       .sub_v(
         this.camera_pos.pos.mul_f(this.camera_opt.scale)
           .sub_v(this.camera_opt.view_centre)
       ).sub_v(dims.div_f(2))
-      //.add_v(iso_offset)
 
     buffer.setTransform(
       this.camera_opt.scale, 0, 0, this.camera_opt.scale,
