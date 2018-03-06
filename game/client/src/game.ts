@@ -228,11 +228,38 @@ class Game {
     //  e: planet_event,
     //})
     //
-    this.engine.event_manager.push_event('player_join', {
-      pos: { x: 50, y: 50 },
-      client_id: this.engine.network.client_id})
+//    this.engine.event_manager.push_event('player_join', {
+//      pos: { x: 50, y: 50 },
+//      client_id: this.engine.network.client_id})
 
     this.selected_entity = null;
+
+    this.create_boxes()
+  }
+
+  create_boxes() {
+    const ps = [
+      new Vector(-200, -200,   56),
+      new Vector(0, -200,  56),
+      new Vector(-200, 0,  56),
+      new Vector(0, 0, 56),
+    ]
+
+    for (let i=0; i<4; ++i) {
+      const e = this.engine._ecs.create_entity()
+      const t = this.engine._ecs.set_entity_component(e, new BaseComponents.TransformComponent())
+      const r = this.engine._ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
+      t.time = -1
+      t.pos = ps[i]
+      t.pos_prev = ps[i]
+      t.pos_next = ps[i]
+      r.canvas = document.createElement('canvas')
+      r.canvas.width = 10
+      r.canvas.height = 10
+      const ctx = r.canvas.getContext('2d')
+      ctx.fillStyle = `rgb(${50*i}, 0, ${255 - 50*i})`
+      ctx.fillRect(0, 0, 10, 10)
+    }
   }
 
   join_game() {

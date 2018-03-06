@@ -7,7 +7,7 @@ import AccelerationComponent from '../components/accelerationComponent'
 import VelocityComponent from '../components/velocityComponent'
 
 class WaypointSystem extends System {
-  contructor() {
+  constructor() {
     super([
       BaseComponents.TransformComponent,
       VelocityComponent,
@@ -25,6 +25,7 @@ class WaypointSystem extends System {
 
     const direction = target_position.sub_v(transformComponent.pos).normalise()
 
+    accelerationComponent
   }
 }
 

@@ -15,6 +15,7 @@ import GuiSystem from './gui_system'
 import * as ECS from 'ecs'
 
 import RenderSystem from './base_systems/renderSystem'
+import IsometricRenderSystem from './base_systems/isometricRenderSystem'
 
 import * as BaseComponents from './base_components'
 
@@ -50,7 +51,7 @@ class Engine {
 
     this._ecs = new ECS.ECS()
 
-    this.render_system = new RenderSystem(this.renderer, this.active_camera_entity)
+    this.render_system = new IsometricRenderSystem(this.renderer, this.active_camera_entity)
     this._ecs.push_system(this.render_system)
 
     this.gui_system = new GuiSystem()
@@ -161,6 +162,7 @@ class Engine {
     /* interpolate positions before render */
     const time = frame_start_time - 100
     this._ecs.components.TransformComponent.forEach((t) => {
+      if (time === -1) { return }
       if (time  < t.pos_prev_time ) {
         t.pos.x = t.pos_prev.x
         t.pos.y = t.pos_prev.y
