@@ -240,12 +240,17 @@ class Game {
   create_boxes() {
     const ps = [
       new Vector(-200, -200,   56),
-      new Vector(0, -200,  56),
+      new Vector(-200, -100,  56),
       new Vector(-200, 0,  56),
+      new Vector(-100, -200,  56),
+      new Vector(-100, -100,   56),
+      new Vector(-100, 0,  56),
+      new Vector(0, -200,  56),
+      new Vector(0, -100,  56),
       new Vector(0, 0, 56),
-    ]
+    ].map(v => v.div_f(4))
 
-    for (let i=0; i<4; ++i) {
+    for (let i=0; i<ps.length; ++i) {
       const e = this.engine._ecs.create_entity()
       const t = this.engine._ecs.set_entity_component(e, new BaseComponents.TransformComponent())
       const r = this.engine._ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
@@ -254,11 +259,30 @@ class Game {
       t.pos_prev = ps[i]
       t.pos_next = ps[i]
       r.canvas = document.createElement('canvas')
-      r.canvas.width = 10
-      r.canvas.height = 10
+      const width = 40
+      const height = 40
+      r.canvas.width = width
+      r.canvas.height = height
       const ctx = r.canvas.getContext('2d')
-      ctx.fillStyle = `rgb(${50*i}, 0, ${255 - 50*i})`
-      ctx.fillRect(0, 0, 10, 10)
+      ctx.strokeStyle = `rgb(${50*i}, 50, ${255 - 50*i})`
+      ctx.beginPath()
+      ctx.moveTo(width / 2, height)
+      ctx.lineTo(width, height * 0.75)
+      ctx.lineTo(width, height / 4)
+      ctx.lineTo(width / 2, 0)
+      ctx.lineTo(0, height / 4)
+      ctx.lineTo(0, height * 0.75)
+      ctx.lineTo(width / 2, height)
+      ctx.moveTo(0, height / 4)
+      ctx.lineTo(width / 2, height / 2)
+      ctx.lineTo(width, height / 4)
+      ctx.moveTo(width / 2, height / 2)
+      ctx.lineTo(width / 2, height)
+      ctx.stroke()
+      ctx.fillStyle = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 / ((i+1) / ps.length))}`
+      ctx.fill()
+      //ctx.strokeRect(0, 0, width, height)
+      //ctx.fillRect(0, 0, 10, 10)
     }
   }
 
@@ -627,5 +651,4 @@ class GUI_TextBox extends GuiElement {
     })
   }
 }
-
 export default Game

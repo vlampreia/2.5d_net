@@ -35,11 +35,22 @@ class IsometricRenderSystem extends System {
   }
 
   process_entities(entities, t, dt) {
-    const sorted_entities = entities.sort((a, b) => {
+    let sorted_entities = entities.sort((a, b) => {
+      return Math.random() - Math.random()
+    })
+
+    //sorted_entities = entities.sort((a, b) => {
+    //  const ta = this.ecs.get_entity_component(a, TransformComponent)
+    //  const tb = this.ecs.get_entity_component(b, TransformComponent)
+
+    //  return ta.pos.z - tb.pos.z
+    //})
+    //
+    sorted_entities = entities.sort((a, b) => {
       const ta = this.ecs.get_entity_component(a, TransformComponent)
       const tb = this.ecs.get_entity_component(b, TransformComponent)
 
-      return ta.pos.z - tb.pos.z
+      return (ta.pos.x + ta.pos.y + ta.pos.z) - (tb.pos.x + tb.pos.y + tb.pos.z)
     })
 
     super.process_entities(sorted_entities, t, dt)
