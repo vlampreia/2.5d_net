@@ -67,7 +67,7 @@ class IsometricRenderSystem extends System {
 
     const transf_pos = new Vector(
       (transformComponent.pos.x - transformComponent.pos.y),
-      (transformComponent.pos.x + transformComponent.pos.y)/2 - dims.y / 2,
+      (transformComponent.pos.x + transformComponent.pos.y)/2 - (dims.y / 2) - transformComponent.pos.z,
       0
     ) .mul_f(this.camera_opt.scale)
       .sub_v(

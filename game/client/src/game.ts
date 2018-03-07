@@ -251,15 +251,15 @@ class Game {
     ]//.map(v => v.div_f(3))
 
     for (let i = 0; i < 10 * 10; ++i) {
-      ps.push(new Vector(~~(i % 10) * 20, ~~(i / 10) * 20, 56))
+      ps.push(new Vector(~~(i % 10) * 40, ~~(i / 10) * 40, 0))
     }
 
-    const make_isometric_cube = (x, y, width, height, depth, color) => {
+    const make_isometric_cube = (x, y, z, width, height, depth, color) => {
       const e = this.engine._ecs.create_entity()
       const t = this.engine._ecs.set_entity_component(e, new BaseComponents.TransformComponent())
       const r = this.engine._ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
       t.time = -1
-      t.pos = new Vector(x, y, 0)
+      t.pos = new Vector(x, y, z)
       t.pos_prev = t.pos
       t.pos_next = t.pos
       r.canvas = document.createElement('canvas')
@@ -290,18 +290,18 @@ class Game {
       ctx.lineTo(xwidth, rheight + xwidth * 0.5 + ywidth * 0.5)
       ctx.stroke()
 
-      ctx.globalAlpha = 0.2
+      //ctx.globalAlpha = 0.2
       ctx.fill()
       //ctx.fillRect(canvas_width / 2 - 1, canvas_height / 2 - 1, 3, 3)
     }
 
     for (let i=0; i<ps.length; ++i) {
       const color = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 * ((ps.length - (i)) / ps.length))}`
-      make_isometric_cube(ps[i].x, ps[i].y, 20, 100 - i, 20, color)
+      make_isometric_cube(ps[i].x, ps[i].y, ps[i].z, 20, 20/*~~(Math.random() * 40) */, 20, color)
     }
 
 
-    //make_isometric_cube(40, 40, 20 * 5, 20, 20 * 3, 'rgb(255, 255, 255)')
+    make_isometric_cube(0, 0, -20, 20, 20, 20, 'rgb(255, 255, 255)')
   }
 
   join_game() {
