@@ -239,55 +239,22 @@ class Game {
 
   create_boxes() {
     const ps = [
-      new Vector(-80, -80,   56),
-      new Vector(-80, -40,  56),
-      new Vector(-80, 0,  56),
-      new Vector(-40, -80,  56),
-      new Vector(-40, -40,   56),
-      new Vector(-40, 0,  56),
-      new Vector(0, -80,  56),
-      new Vector(0, -40,  56),
-      new Vector(0, 0, 56),
+//      new Vector(-80, -80,   56),
+//      new Vector(-80, -60,  56),
+//      new Vector(-80, -40,  56),
+//      new Vector(-60, -80,  56),
+//      new Vector(-60, -60,   56),
+//      new Vector(-60, -40,  56),
+//      new Vector(-40, -80,  56),
+//      new Vector(-40, -60,  56),
+//      new Vector(-40, -40, 56),
     ]//.map(v => v.div_f(3))
 
-    for (let i=0; i<ps.length; ++i) {
-      const e = this.engine._ecs.create_entity()
-      const t = this.engine._ecs.set_entity_component(e, new BaseComponents.TransformComponent())
-      const r = this.engine._ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
-      t.time = -1
-      t.pos = ps[i]
-      t.pos_prev = ps[i]
-      t.pos_next = ps[i]
-      r.canvas = document.createElement('canvas')
-      const width = 40
-      const height = 40
-      r.canvas.width = width
-      r.canvas.height = height
-      const ctx = r.canvas.getContext('2d')
-      ctx.strokeStyle = `rgb(${50*i}, 50, ${255 - 50*i})`
-      ctx.beginPath()
-      ctx.moveTo(width / 2, height)
-      ctx.lineTo(width, height * 0.75)
-      ctx.lineTo(width, height / 4)
-      ctx.lineTo(width / 2, 0)
-      ctx.lineTo(0, height / 4)
-      ctx.lineTo(0, height * 0.75)
-      ctx.lineTo(width / 2, height)
-      ctx.moveTo(0, height / 4)
-      ctx.lineTo(width / 2, height / 2)
-      ctx.lineTo(width, height / 4)
-      ctx.moveTo(width / 2, height / 2)
-      ctx.lineTo(width / 2, height)
-      ctx.stroke()
-      ctx.fillStyle = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 * ((ps.length - (i)) / ps.length))}`
-      //ctx.fill()
-      //ctx.strokeRect(0, 0, width, height)
-      //ctx.fillRect(0, 0, 10, 10)
-      ctx.fillStyle = 'rgb(255, 255, 255)'
-      ctx.fillRect(width / 2 - 1, height / 2 - 1, 3, 3)
+    for (let i = 0; i < 10 * 10; ++i) {
+      ps.push(new Vector(~~(i % 10) * 20, ~~(i / 10) * 20, 56))
     }
 
-    const make_isometric_cube = (x, y, width, height, depth) => {
+    const make_isometric_cube = (x, y, width, height, depth, color) => {
       const e = this.engine._ecs.create_entity()
       const t = this.engine._ecs.set_entity_component(e, new BaseComponents.TransformComponent())
       const r = this.engine._ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
@@ -306,9 +273,10 @@ class Game {
       const ctx = r.canvas.getContext('2d')
       //ctx.strokeStyle = `rgb(255, 255, 255)`
       //ctx.strokeRect(0, 0, width, height)
-      ctx.strokeStyle = `rgb(0, 255, 0)`
-      ctx.beginPath()
+      ctx.strokeStyle = color
+      ctx.fillStyle = color
 
+      ctx.beginPath()
       ctx.moveTo(0, ywidth / 2)
       ctx.lineTo(0, ywidth / 2 + rheight)
       ctx.lineTo(xwidth, rheight + xwidth * 0.5 + ywidth * 0.5)
@@ -320,14 +288,20 @@ class Game {
       ctx.lineTo(xwidth + ywidth, xwidth * 0.5)
       ctx.moveTo(xwidth, xwidth * 0.5 + ywidth * 0.5)
       ctx.lineTo(xwidth, rheight + xwidth * 0.5 + ywidth * 0.5)
-
       ctx.stroke()
-      //ctx.fill()
-      ctx.fillStyle = 'rgb(255, 255, 255)'
-      ctx.fillRect(canvas_width / 2 - 1, canvas_height / 2 - 1, 3, 3)
+
+      ctx.globalAlpha = 0.2
+      ctx.fill()
+      //ctx.fillRect(canvas_width / 2 - 1, canvas_height / 2 - 1, 3, 3)
     }
 
-    make_isometric_cube(40, 40, 20 * 5, 20, 20 * 3)
+    for (let i=0; i<ps.length; ++i) {
+      const color = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 * ((ps.length - (i)) / ps.length))}`
+      make_isometric_cube(ps[i].x, ps[i].y, 20, 100 - i, 20, color)
+    }
+
+
+    //make_isometric_cube(40, 40, 20 * 5, 20, 20 * 3, 'rgb(255, 255, 255)')
   }
 
   join_game() {

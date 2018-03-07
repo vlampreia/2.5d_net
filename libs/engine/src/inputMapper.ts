@@ -13,13 +13,14 @@ class InputMapper {
     this._event_manager.add_listener(E.KEY_UP, this.handle_key_up.bind(this))
     this._event_manager.add_listener(E.MOUSE_DOWN, this.handle_mouse_click.bind(this))
 
+    // types: action, state, range
     this._keyboard_input_mapping = {
       'KeyA': { event_type: 'in_player_move', action_type: 'state', action_name: 'MOVE_LEFT' },
       'KeyD': { event_type: 'in_player_move', action_type: 'state', action_name: 'MOVE_RIGHT' },
       'KeyW': { event_type: 'in_player_move', action_type: 'state', action_name: 'MOVE_UP' },
       'KeyS': { event_type: 'in_player_move', action_type: 'state', action_name: 'MOVE_DOWN' },
       //'KeyI': { event_type: 'ui_action', action: 'TOGGLE_INPUT' },
-      //'KeyO': { event_type: 'ui_action', action: 'TOGGLE_DEBUG' },
+      'KeyO': { event_type: 'ui_action', action_type: 'action', action_name: 'TOGGLE_DEBUG' },
     }
   }
 
@@ -50,6 +51,8 @@ class InputMapper {
     if (!(this._keyboard_input_mapping.hasOwnProperty(e.code))) { return }
 
     const out_ev = this._keyboard_input_mapping[e.code]
+
+    if (out_ev.action_type === 'action') { return }
 
     const data = {
       action: out_ev.action_name,
