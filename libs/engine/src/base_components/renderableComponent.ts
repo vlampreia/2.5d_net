@@ -1,14 +1,17 @@
 'use strict'
 
 import { Component } from 'ecs'
+import Vector from 'common'
 
 class RenderableComponent extends Component {
   canvas
+  midpoint
 
   constructor() {
     super()
 
     this.canvas = null
+    this.midpoint = new Vector(0, 0, 0)
   }
 
   serialise() {

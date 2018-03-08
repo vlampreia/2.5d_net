@@ -270,6 +270,7 @@ class Game {
       const canvas_height = rheight + xwidth / 2 + ywidth / 2
       r.canvas.width = canvas_width
       r.canvas.height = canvas_height
+      const b = this.engine._ecs.set_entity_component(e, new BaseComponents.BoundsComponent(canvas_width, canvas_height))
       const ctx = r.canvas.getContext('2d')
       //ctx.strokeStyle = `rgb(255, 255, 255)`
       //ctx.strokeRect(0, 0, width, height)
@@ -290,18 +291,25 @@ class Game {
       ctx.lineTo(xwidth, rheight + xwidth * 0.5 + ywidth * 0.5)
       ctx.stroke()
 
-      //ctx.globalAlpha = 0.2
+      ctx.globalAlpha = 0.2
       ctx.fill()
+
+      r.midpoint.y = height / 2
       //ctx.fillRect(canvas_width / 2 - 1, canvas_height / 2 - 1, 3, 3)
     }
+
+    make_isometric_cube(20, -40, 0,  60, 20, 60, 'rgb(20, 255, 255)')
+    make_isometric_cube(0,  -40, 20, 20, 20, 60, 'rgb(200, 255, 255)')
+    make_isometric_cube(40, -40, 20, 20, 20, 60, 'rgb(200, 255, 255)')
+    make_isometric_cube(20, -20, 40, 60, 20, 20, 'rgb(255, 255, 255)')
+    make_isometric_cube(20, -60, 40, 60, 20, 20, 'rgb(255, 255, 255)')
+    make_isometric_cube(100, 100, 0, 100, 10, 100, 'rgb(255, 100, 100)')
 
     for (let i=0; i<ps.length; ++i) {
       const color = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 * ((ps.length - (i)) / ps.length))}`
       make_isometric_cube(ps[i].x, ps[i].y, ps[i].z, 20, 20/*~~(Math.random() * 40) */, 20, color)
     }
 
-
-    make_isometric_cube(0, 0, -20, 20, 20, 20, 'rgb(255, 255, 255)')
   }
 
   join_game() {
@@ -326,8 +334,8 @@ class Game {
         .sub_v(camera_opt.view_centre)
       )
       .div_f(camera_opt.scale)
-      world_pos.x = (world_pos.x + world_pos.y * 2) / 2
-      world_pos.y = -(world_pos.x - world_pos.y * 2) / 1
+//      world_pos.x = (world_pos.x + world_pos.y * 2) / 2
+//      world_pos.y = -(world_pos.x - world_pos.y * 2) / 1
 
 
     console.log('click at ', world_pos)

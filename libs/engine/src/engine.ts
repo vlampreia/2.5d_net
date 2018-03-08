@@ -273,6 +273,8 @@ class Engine {
     // TODO: optimise this with a spacial datastructure
     // TODO: this does not work with rotated or non rectangular bounds
 
+    const entities = []
+
     for (let i = 0; i < this._ecs.entities.length; ++i) {
       const e = this._ecs.entities[i]
       if (!e) { continue }
@@ -283,15 +285,27 @@ class Engine {
       const b = this._ecs.get_entity_component(e, BaseComponents.BoundsComponent)
       if (!b) { continue }
 
-      if (position.x < t.pos.x - b.width / 2) { continue }
-      if (position.x > t.pos.x + b.width / 2) { continue }
-      if (position.y < t.pos.y - b.height / 2) { continue }
-      if (position.y > t.pos.y + b.height / 2) { continue }
+      const mp = new Vector(
+        (t.pos.x - t.pos.y),
+        (t.pos.x + t.pos.y) / 2 - (b.height / 2) - t.pos.z,
+        0
+      )
 
-      return e
+      if (position.x < mp.x - b.width / 2) { continue }
+      if (position.x > mp.x + b.width / 2) { continue }
+      if (position.y < mp.y - b.height / 2) { continue }
+      if (position.y > mp.y + b.height / 2) { continue }
+
+      entities.push({ e: e, pos: t.pos })
     }
 
-    return null
+    if (entities.length === 0) { return null }
+
+    const e = entities.sort((a, b) => {
+      return (b.pos.x + b.pos.y + b.pos.z) - (a.pos.x + a.pos.y + a.pos.z)
+    })[0]
+
+    return e.e
   }
 }
 

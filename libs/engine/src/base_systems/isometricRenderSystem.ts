@@ -35,9 +35,9 @@ class IsometricRenderSystem extends System {
   }
 
   process_entities(entities, t, dt) {
-    let sorted_entities = entities.sort((a, b) => {
-      return Math.random() - Math.random()
-    })
+    //let sorted_entities = entities.sort((a, b) => {
+    //  return Math.random() - Math.random()
+    //})
 
     //sorted_entities = entities.sort((a, b) => {
     //  const ta = this.ecs.get_entity_component(a, TransformComponent)
@@ -46,11 +46,14 @@ class IsometricRenderSystem extends System {
     //  return ta.pos.z - tb.pos.z
     //})
     //
-    sorted_entities = entities.sort((a, b) => {
+    const sorted_entities = entities.sort((a, b) => {
       const ta = this.ecs.get_entity_component(a, TransformComponent)
       const tb = this.ecs.get_entity_component(b, TransformComponent)
 
-      return (ta.pos.x + ta.pos.y + ta.pos.z) - (tb.pos.x + tb.pos.y + tb.pos.z)
+      const zd = ta.pos.z - tb.pos.z
+      if (zd !== 0) { return zd }
+
+      return (ta.pos.x + ta.pos.y) - (tb.pos.x + tb.pos.y)
     })
 
     super.process_entities(sorted_entities, t, dt)
@@ -67,7 +70,8 @@ class IsometricRenderSystem extends System {
 
     const transf_pos = new Vector(
       (transformComponent.pos.x - transformComponent.pos.y),
-      (transformComponent.pos.x + transformComponent.pos.y)/2 - (dims.y / 2) - transformComponent.pos.z,
+      (transformComponent.pos.x + transformComponent.pos.y)/2
+        - (renderableComponent.midpoint.y) - transformComponent.pos.z,
       0
     ) .mul_f(this.camera_opt.scale)
       .sub_v(
