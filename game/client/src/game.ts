@@ -251,7 +251,7 @@ class Game {
     ]//.map(v => v.div_f(3))
 
     for (let i = 0; i < 10 * 10; ++i) {
-      ps.push(new Vector(~~(i % 10) * 40, ~~(i / 10) * 40, 0))
+      ps.push(new Vector(~~(i % 10) * 20, ~~(i / 10) * 20, 0))
     }
 
     const make_isometric_cube = (x, y, z, width, height, depth, color) => {
@@ -291,23 +291,28 @@ class Game {
       ctx.lineTo(xwidth, rheight + xwidth * 0.5 + ywidth * 0.5)
       ctx.stroke()
 
-      ctx.globalAlpha = 0.2
+      ctx.globalAlpha = 0.3
       ctx.fill()
 
-      r.midpoint.y = height / 2
+      r.midpoint.x = canvas_width / 2
+      r.midpoint.y = canvas_height / 2 + height / 2
+      b.offset = r.midpoint
       //ctx.fillRect(canvas_width / 2 - 1, canvas_height / 2 - 1, 3, 3)
     }
 
-    make_isometric_cube(20, -40, 0,  60, 20, 60, 'rgb(20, 255, 255)')
-    make_isometric_cube(0,  -40, 20, 20, 20, 60, 'rgb(200, 255, 255)')
-    make_isometric_cube(40, -40, 20, 20, 20, 60, 'rgb(200, 255, 255)')
-    make_isometric_cube(20, -20, 40, 60, 20, 20, 'rgb(255, 255, 255)')
-    make_isometric_cube(20, -60, 40, 60, 20, 20, 'rgb(255, 255, 255)')
-    make_isometric_cube(100, 100, 0, 100, 10, 100, 'rgb(255, 100, 100)')
+    //make_isometric_cube(20, -40, 0,  60, 20, 60, 'rgb(20, 255, 255)')
+    //make_isometric_cube(0,  -40, 20, 20, 20, 60, 'rgb(200, 255, 255)')
+    //make_isometric_cube(40, -40, 20, 20, 20, 60, 'rgb(200, 255, 255)')
+    //make_isometric_cube(20, -20, 40, 60, 20, 20, 'rgb(255, 255, 255)')
+    //make_isometric_cube(20, -60, 40, 60, 20, 20, 'rgb(255, 255, 255)')
+
+    //make_isometric_cube(100, 100, 0, 200, 10, 200, 'rgb(100, 255, 100)')
 
     for (let i=0; i<ps.length; ++i) {
       const color = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 * ((ps.length - (i)) / ps.length))}`
-      make_isometric_cube(ps[i].x, ps[i].y, ps[i].z, 20, 20/*~~(Math.random() * 40) */, 20, color)
+      make_isometric_cube(ps[i].x, 
+        //ps[i].y, ps[i].z, 20, ~~(Math.random() * 40) , 20, color)
+        ps[i].y, ps[i].z, 20, 20 , 20, color)
     }
 
   }
@@ -338,7 +343,7 @@ class Game {
 //      world_pos.y = -(world_pos.x - world_pos.y * 2) / 1
 
 
-    console.log('click at ', world_pos)
+    //console.log('click at ', world_pos)
     //const world_pos = this.engine.mouse_pos
     //  .add_v(camera_pos.pos
     //    .mul_f(camera_opt.scale)

@@ -286,8 +286,8 @@ class Engine {
       if (!b) { continue }
 
       const mp = new Vector(
-        (t.pos.x - t.pos.y),
-        (t.pos.x + t.pos.y) / 2 - (b.height / 2) - t.pos.z,
+        (t.pos.x - t.pos.y) - (b.offset.x),
+        (t.pos.x + t.pos.y) / 2 - (b.offset.y) - t.pos.z,
         0
       )
 
