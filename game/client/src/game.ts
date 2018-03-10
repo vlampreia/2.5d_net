@@ -35,6 +35,7 @@ class Game {
   ui_planet_info
   targeted
   input_text
+  mouse_e_t
     //this.blocks.forEach(b => this.network.enqueue_msg(client_id, 'place_block', { block: b }))
     //this.network.enqueue_msg(client_id, )
     //
@@ -270,7 +271,10 @@ class Game {
       const canvas_height = rheight + xwidth / 2 + ywidth / 2
       r.canvas.width = canvas_width
       r.canvas.height = canvas_height
-      const b = this.engine._ecs.set_entity_component(e, new BaseComponents.BoundsComponent(canvas_width, canvas_height))
+      const b = this.engine._ecs.set_entity_component(
+        e, 
+        new BaseComponents.BoundsComponent(canvas_width, canvas_height)
+      )
       const ctx = r.canvas.getContext('2d')
       //ctx.strokeStyle = `rgb(255, 255, 255)`
       //ctx.strokeRect(0, 0, width, height)
@@ -296,8 +300,11 @@ class Game {
 
       r.midpoint.x = canvas_width / 2
       r.midpoint.y = canvas_height / 2 + height / 2
-      b.offset = r.midpoint
+      b.offset = new Vector(r.midpoint.x, height/2, 0)
+      //b.offset = new Vector(r.midpoint.x, r.midpoint.y, 0)
+      //b.offset = new Vector(width / 2, height / 2, 0)
       //ctx.fillRect(canvas_width / 2 - 1, canvas_height / 2 - 1, 3, 3)
+      return t
     }
 
     //make_isometric_cube(20, -40, 0,  60, 20, 60, 'rgb(20, 255, 255)')
@@ -306,14 +313,18 @@ class Game {
     //make_isometric_cube(20, -20, 40, 60, 20, 20, 'rgb(255, 255, 255)')
     //make_isometric_cube(20, -60, 40, 60, 20, 20, 'rgb(255, 255, 255)')
 
-    //make_isometric_cube(100, 100, 0, 200, 10, 200, 'rgb(100, 255, 100)')
+    //make_isometric_cube(90, 90, -10, 200, 10, 200, 'rgb(100, 255, 100)')
+    //make_isometric_cube(90, 90, 20, 200, 10, 200, 'rgb(100, 255, 100)')
 
-    for (let i=0; i<ps.length; ++i) {
+    //for (let i=0; i<ps.length; ++i) {
+    for (let i=0; i<21; ++i) {
       const color = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 * ((ps.length - (i)) / ps.length))}`
       make_isometric_cube(ps[i].x, 
         //ps[i].y, ps[i].z, 20, ~~(Math.random() * 40) , 20, color)
         ps[i].y, ps[i].z, 20, 20 , 20, color)
     }
+
+    //this.mouse_e_t = make_isometric_cube(0, 0, 0, 20, 20, 20, 'rgb(255, 255, 255)')
 
   }
 
@@ -333,14 +344,23 @@ class Game {
     const camera_opt = this.engine._ecs
       .get_entity_component(this.camera, BaseComponents.CameraComponent)
 
-    let world_pos = this.engine.mouse_pos
+    let world_pos = new Vector(this.engine.mouse_pos.x, this.engine.mouse_pos.y, 0)
+
       world_pos = world_pos.add_v(camera_pos.pos
         .mul_f(camera_opt.scale)
         .sub_v(camera_opt.view_centre)
       )
       .div_f(camera_opt.scale)
-//      world_pos.x = (world_pos.x + world_pos.y * 2) / 2
-//      world_pos.y = -(world_pos.x - world_pos.y * 2) / 1
+
+    const x = - ~~world_pos.x / 2
+    const y = ~~world_pos.y
+
+      world_pos.x = -(x - y)
+      world_pos.y = (x + y) 
+
+
+    //this.mouse_e_t.pos.x = world_pos.x
+    //this.mouse_e_t.pos.y = world_pos.y
 
 
     //console.log('click at ', world_pos)
