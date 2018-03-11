@@ -112,7 +112,7 @@ class Game {
       .forEach((c) => this.engine._ecs.register_component_class(c))
 
     //this.engine.set_render_hook(this.render_gui.bind(this))
-    this.engine.set_render_hook(this.render_stuff.bind(this))
+    this.engine.set_pre_render_hook(this.render_stuff.bind(this))
     this.engine.set_simulation_hook(this.engine_simulation_hook.bind(this))
 
     const net = this.engine.network
@@ -335,8 +335,8 @@ class Game {
     //make_isometric_cube(90,  90,  50, 100, 10, 100, 'rgba(100, 255, 100, 0.5)')
     //make_isometric_cube(90,  90,  80, 50,  10,  50, 'rgba(100, 255, 100, 0.2)')
     make_isometric_cube(330, 90, -10, 40,  10,  40, 'rgb(100, 255, 100)')
-    make_isometric_cube(-80, 320, -10, 200, 20, 20, 'rgb(100, 100, 255)')
-    make_isometric_cube(240, 320, -10, 100, 20, 20, 'rgb(100, 100, 255)')
+    make_isometric_cube(-40, 320, -10, 200, 20, 20, 'rgb(100, 100, 255)')
+    make_isometric_cube(180, 320, -10, 100, 20, 20, 'rgb(100, 100, 255)')
     //make_isometric_cube(230, 50, -10, 20,  10,  20, 'rgb(100, 255, 100)')
     //make_isometric_cube(230, 10, -10, 20,  10,  20, 'rgb(100, 255, 100)')
     //make_isometric_cube(230, 50, -50, 20,  10,  20, 'rgba(100, 255, 100, 0.5)')

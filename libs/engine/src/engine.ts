@@ -36,6 +36,7 @@ class Engine {
   mouse_pos
   _simulation_hook_fn
   _render_hook_fn
+  _pre_render_hook_fn
   show_dbg
 
   constructor(canvas_element) {
@@ -98,6 +99,7 @@ class Engine {
 
     this._simulation_hook_fn = null
     this._render_hook_fn = null
+    this._pre_render_hook_fn = null
 
     this._ecs.register_component_class(BaseComponents.TransformComponent)
     this._ecs.register_component_class(BaseComponents.BoundsComponent)
@@ -131,6 +133,14 @@ class Engine {
 
   call_render_hook(ctx) {
     if (this._render_hook_fn) { this._render_hook_fn(ctx) }
+  }
+
+  set_pre_render_hook(fn) {
+    this._pre_render_hook_fn = fn
+  }
+
+  call_pre_render_hook(ctx) {
+    if (this._pre_render_hook_fn) { this._pre_render_hook_fn(ctx) }
   }
 
   main_loop(t) {
@@ -185,6 +195,7 @@ class Engine {
     const render_t1 = Date.now()
     this.renderer.clear_buffer()
     this.renderer.render_bg()
+    this.call_pre_render_hook(this.renderer.buffer_ctx)
     this.render_system.update()
     this.call_render_hook(this.renderer.buffer_ctx)
     this.render_ui()
