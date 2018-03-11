@@ -90,6 +90,11 @@ class IsometricRenderSystem extends System {
 
   set_active_camera_entity(camera_entity) {
     this.camera_entity = camera_entity
+
+    this.camera_pos = this.ecs
+      .get_entity_component(this.camera_entity, TransformComponent)
+    this.camera_opt = this.ecs
+      .get_entity_component(this.camera_entity, CameraComponent)
   }
 }
 

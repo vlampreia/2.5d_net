@@ -7,6 +7,7 @@ declare class Vector {
     subtract(vector: any): Vector;
     sub_v(vector: any): Vector;
     multiply(factor: any): Vector;
+    mul_v(vector: any): Vector;
     mul_f(factor: any): Vector;
     add_f(value: any): Vector;
     sub_f(value: any): Vector;

@@ -27,6 +27,10 @@ class Vector {
     return new Vector(this.x * factor, this.y * factor, this.z * factor)
   }
 
+  mul_v(vector) {
+    return new Vector(this.x * vector.x, this.y * vector.y, this.z * vector.z)
+  }
+
   mul_f(factor) {
     return this.multiply(factor)
   }

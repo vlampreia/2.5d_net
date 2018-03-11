@@ -14,12 +14,14 @@ import PlayerNetworkUpdateComponent from '../../components/playerNetworkUpdateCo
 import AccelerationComponent from '../../components/accelerationComponent'
 import PlayerControlledComponent from '../../components/playerControlledComponent'
 import WaypointComponent from '../../components/waypointComponent'
+import MeshComponent from '../../components/meshComponent'
 
 import PlayerNetworkUpdateSystem from '../../systems/playernetworkUpdateSystem'
 import TransformFollowerSystem from '../../systems/transformFollowerSystem'
 import MotionSystem from '../../systems/motionSystem'
 import PlayerController from '../../systems/playerController'
 import WaypointSystem from '../../systems/waypointSystem'
+import MeshSystem from '../../systems/meshSystem'
 
 import Vector from 'common'
 
@@ -87,6 +89,7 @@ class Game {
       transform_follower: new TransformFollowerSystem(),
       motion_system: new MotionSystem(),
       waypoint_system: new WaypointSystem(),
+      mesh_test_system: new MeshSystem(),
       //player_controller: new PlayerController(this.event_manager),
     }
     Object.values(this.systems)
@@ -102,12 +105,14 @@ class Game {
       VelocityComponent,
       AccelerationComponent,
       WaypointComponent,
+      MeshComponent,
       //PlayerControlledComponent
     }
     Object.values(this.component_classes)
       .forEach((c) => this.engine._ecs.register_component_class(c))
 
     //this.engine.set_render_hook(this.render_gui.bind(this))
+    this.engine.set_render_hook(this.render_stuff.bind(this))
     this.engine.set_simulation_hook(this.engine_simulation_hook.bind(this))
 
     const net = this.engine.network
@@ -251,14 +256,13 @@ class Game {
 //      new Vector(-40, -40, 56),
     ]//.map(v => v.div_f(3))
 
-    for (let i = 0; i < 10 * 10; ++i) {
-      ps.push(new Vector(~~(i % 10) * 20, ~~(i / 10) * 20, 0))
-    }
 
     const make_isometric_cube = (x, y, z, width, height, depth, color) => {
       const e = this.engine._ecs.create_entity()
       const t = this.engine._ecs.set_entity_component(e, new BaseComponents.TransformComponent())
       const r = this.engine._ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
+      const mesh = this.engine._ecs.set_entity_component(e, new MeshComponent())
+
       t.time = -1
       t.pos = new Vector(x, y, z)
       t.pos_prev = t.pos
@@ -266,9 +270,8 @@ class Game {
       r.canvas = document.createElement('canvas')
       const xwidth = width
       const ywidth = depth
-      const rheight = height
       const canvas_width = xwidth + ywidth
-      const canvas_height = rheight + xwidth / 2 + ywidth / 2
+      const canvas_height = height + xwidth / 2 + ywidth / 2
       r.canvas.width = canvas_width
       r.canvas.height = canvas_height
       const b = this.engine._ecs.set_entity_component(
@@ -281,18 +284,31 @@ class Game {
       ctx.strokeStyle = color
       ctx.fillStyle = color
 
+      //mesh.push_vertex(0,               ywidth / 2)
+      mesh.push_vertex(0,               ywidth / 2 + height)
+      mesh.push_vertex(xwidth,          height + xwidth * 0.5 + ywidth * 0.5)
+      mesh.push_vertex(xwidth + ywidth, height + xwidth * 0.5)
+      //mesh.push_vertex(xwidth + ywidth, xwidth * 0.5)
+      mesh.push_vertex(ywidth,          height)
+      //mesh.push_vertex(ywidth,          0)
+      //mesh.push_vector(0,               ywidth / 2)
+      //mesh.push_vector(xwidth,          xwidth * 0.5 + ywidth * 0.5)
+      //mesh.push_vector(xwidth + ywidth, xwidth * 0.5)
+      //mesh.push_vector(xwidth,          xwidth * 0.5 + ywidth * 0.5)
+      //mesh.push_vector(xwidth,          height + xwidth * 0.5 + ywidth * 0.5)
+
       ctx.beginPath()
-      ctx.moveTo(0, ywidth / 2)
-      ctx.lineTo(0, ywidth / 2 + rheight)
-      ctx.lineTo(xwidth, rheight + xwidth * 0.5 + ywidth * 0.5)
-      ctx.lineTo(xwidth + ywidth, rheight + xwidth * 0.5)
+      ctx.moveTo(0,               ywidth / 2)
+      ctx.lineTo(0,               ywidth / 2 + height)
+      ctx.lineTo(xwidth,          height + xwidth * 0.5 + ywidth * 0.5)
+      ctx.lineTo(xwidth + ywidth, height + xwidth * 0.5)
       ctx.lineTo(xwidth + ywidth, xwidth * 0.5)
-      ctx.lineTo(ywidth, 0)
-      ctx.lineTo(0, ywidth / 2)
-      ctx.lineTo(xwidth, xwidth * 0.5 + ywidth * 0.5)
+      ctx.lineTo(ywidth,          0)
+      ctx.lineTo(0,               ywidth / 2)
+      ctx.lineTo(xwidth,          xwidth * 0.5 + ywidth * 0.5)
       ctx.lineTo(xwidth + ywidth, xwidth * 0.5)
-      ctx.moveTo(xwidth, xwidth * 0.5 + ywidth * 0.5)
-      ctx.lineTo(xwidth, rheight + xwidth * 0.5 + ywidth * 0.5)
+      ctx.moveTo(xwidth,          xwidth * 0.5 + ywidth * 0.5)
+      ctx.lineTo(xwidth,          height + xwidth * 0.5 + ywidth * 0.5)
       ctx.stroke()
 
       ctx.globalAlpha = 0.3
@@ -300,6 +316,7 @@ class Game {
 
       r.midpoint.x = canvas_width / 2
       r.midpoint.y = canvas_height / 2 + height / 2
+      mesh.mid = new Vector(r.midpoint.x, r.midpoint.y, 0)
       b.offset = new Vector(r.midpoint.x, height/2, 0)
       //b.offset = new Vector(r.midpoint.x, r.midpoint.y, 0)
       //b.offset = new Vector(width / 2, height / 2, 0)
@@ -313,13 +330,25 @@ class Game {
     //make_isometric_cube(20, -20, 40, 60, 20, 20, 'rgb(255, 255, 255)')
     //make_isometric_cube(20, -60, 40, 60, 20, 20, 'rgb(255, 255, 255)')
 
-    //make_isometric_cube(90, 90, -10, 200, 10, 200, 'rgb(100, 255, 100)')
-    //make_isometric_cube(90, 90, 20, 200, 10, 200, 'rgb(100, 255, 100)')
+    make_isometric_cube(90,  90, -10, 200, 10, 200, 'rgb(100, 255, 100)')
+    //make_isometric_cube(90,  90,  20, 150, 10, 150, 'rgba(100, 255, 100, 0.8)')
+    //make_isometric_cube(90,  90,  50, 100, 10, 100, 'rgba(100, 255, 100, 0.5)')
+    //make_isometric_cube(90,  90,  80, 50,  10,  50, 'rgba(100, 255, 100, 0.2)')
+    make_isometric_cube(330, 90, -10, 40,  10,  40, 'rgb(100, 255, 100)')
+    //make_isometric_cube(230, 50, -10, 20,  10,  20, 'rgb(100, 255, 100)')
+    //make_isometric_cube(230, 10, -10, 20,  10,  20, 'rgb(100, 255, 100)')
+    //make_isometric_cube(230, 50, -50, 20,  10,  20, 'rgba(100, 255, 100, 0.5)')
+    //make_isometric_cube(230, 10, -50, 20,  10,  20, 'rgba(100, 255, 100, 0.5)')
+    //make_isometric_cube(230, 10, -90, 20,  10,  20, 'rgba(100, 255, 100, 0.2)')
 
-    //for (let i=0; i<ps.length; ++i) {
-    for (let i=0; i<21; ++i) {
+    //for (let i = 0; i < 10 * 10; ++i) {
+    //  ps.push(new Vector(~~(i % 10) * 20, ~~(i / 10) * 20, 0))
+    //}
+
+    for (let i=0; i<ps.length; ++i) {
+    //for (let i=0; i<21; ++i) {
       const color = `rgb(${~~(255 * ((i+1) / ps.length))}, 50, ${~~(255 * ((ps.length - (i)) / ps.length))}`
-      make_isometric_cube(ps[i].x, 
+      make_isometric_cube(ps[i].x,
         //ps[i].y, ps[i].z, 20, ~~(Math.random() * 40) , 20, color)
         ps[i].y, ps[i].z, 20, 20 , 20, color)
     }
@@ -345,8 +374,7 @@ class Game {
       .get_entity_component(this.camera, BaseComponents.CameraComponent)
 
     let world_pos = new Vector(this.engine.mouse_pos.x, this.engine.mouse_pos.y, 0)
-
-      world_pos = world_pos.add_v(camera_pos.pos
+      .add_v(camera_pos.pos
         .mul_f(camera_opt.scale)
         .sub_v(camera_opt.view_centre)
       )
@@ -355,9 +383,8 @@ class Game {
     const x = - ~~world_pos.x / 2
     const y = ~~world_pos.y
 
-      world_pos.x = -(x - y)
-      world_pos.y = (x + y) 
-
+    world_pos.x = -(x - y)
+    world_pos.y = (x + y) 
 
     //this.mouse_e_t.pos.x = world_pos.x
     //this.mouse_e_t.pos.y = world_pos.y
@@ -597,32 +624,40 @@ class Game {
     this.render_bg()
   }
 
+  render_stuff(ctx) {
+    this.systems.mesh_test_system.set_ctx(ctx)
+    this.systems.mesh_test_system.set_camera(this.camera)
+    this.systems.mesh_test_system.set_cursor(this.engine.mouse_pos)
+    this.systems.mesh_test_system.update()
+  }
+
   render_bg() {
     const bgcanvas = document.createElement('canvas')
     const ctx = bgcanvas.getContext('2d')
     bgcanvas.width = window.innerWidth
     bgcanvas.height = window.innerHeight
-    ctx.fillStyle = 'rgb(0, 0, 0)'
+    //ctx.fillStyle = 'rgb(0, 0, 0)'
+    ctx.fillStyle = 'rgb(25, 23, 23)'
     ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
 
-    for (let i=0; i<8; ++i) {
-      const min = 230
-      const max = 255
-      const a = (i+1) / 9
-      const max_stars = 1000
+    //for (let i=0; i<8; ++i) {
+    //  const min = 230
+    //  const max = 255
+    //  const a = (i+1) / 9
+    //  const max_stars = 1000
 
-      for (let j = 0; j < (8-i) * 500; ++j) {
-        const r = ~~(Math.random() * (max - min + 1)) + min
-        const g = ~~(Math.random() * (max - min + 1)) + min
-        const b = ~~(Math.random() * (max - min + 1)) + min
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`
+    //  for (let j = 0; j < (8-i) * 500; ++j) {
+    //    const r = ~~(Math.random() * (max - min + 1)) + min
+    //    const g = ~~(Math.random() * (max - min + 1)) + min
+    //    const b = ~~(Math.random() * (max - min + 1)) + min
+    //    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`
 
-        const x = ~~(Math.random() * bgcanvas.width)
-        const y = ~~(Math.random() * bgcanvas.height)
+    //    const x = ~~(Math.random() * bgcanvas.width)
+    //    const y = ~~(Math.random() * bgcanvas.height)
 
-        ctx.fillRect(x, y, 1, 1)
-      }
-    }
+    //    ctx.fillRect(x, y, 1, 1)
+    //  }
+    //}
 
     this.engine.renderer.draw_to_background(bgcanvas)
   }
