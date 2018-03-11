@@ -200,7 +200,8 @@ class MeshSystem extends System {
                 const intersection_point = get_intersection_point(v1, target[1], other_mesh[ovi], other_mesh[ovi_r])
                 if (intersection_point) {
                   if (ti === 0) {
-                      hide = true
+                    // XXX: this will cause issues within closed structures
+                    //hide = true
                       ti = targets.length
                   }
                     if (!closest_intersection_point || closest_intersection_point > intersection_point) {
@@ -337,13 +338,14 @@ class MeshSystem extends System {
       //this.ctx.globalCompositeOperation = 'destination-out'
       this.ctx.globalCompositeOperation = 'screen'
       const gradient = this.ctx.createRadialGradient(v1.x, v1.y * 2, 0, v1.x, v1.y * 2, 1000)
-      gradient.addColorStop(0, `rgba(255, ${~~(255/source_positions.length)*spi}, 0, 1.0)`)
+      gradient.addColorStop(0, `rgba(200, ${~~(255/source_positions.length)*spi}, 10, 1.0)`)
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
       this.ctx.fillStyle = gradient
       this.ctx.fill()
     this.ctx.resetTransform()
     }
 
+    this.ctx.globalCompositeOperation = 'normal'
   }
 
   process_entities(entities, t, dt) {

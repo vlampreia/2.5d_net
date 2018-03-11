@@ -330,7 +330,7 @@ class Game {
     //make_isometric_cube(20, -20, 40, 60, 20, 20, 'rgb(255, 255, 255)')
     //make_isometric_cube(20, -60, 40, 60, 20, 20, 'rgb(255, 255, 255)')
 
-    make_isometric_cube(90,  90, -10, 200, 10, 200, 'rgb(100, 255, 100)')
+    make_isometric_cube(90,  90, -10, 200, 50, 200, 'rgb(100, 255, 100)')
     //make_isometric_cube(90,  90,  20, 150, 10, 150, 'rgba(100, 255, 100, 0.8)')
     //make_isometric_cube(90,  90,  50, 100, 10, 100, 'rgba(100, 255, 100, 0.5)')
     //make_isometric_cube(90,  90,  80, 50,  10,  50, 'rgba(100, 255, 100, 0.2)')
@@ -342,6 +342,11 @@ class Game {
     //make_isometric_cube(230, 50, -50, 20,  10,  20, 'rgba(100, 255, 100, 0.5)')
     //make_isometric_cube(230, 10, -50, 20,  10,  20, 'rgba(100, 255, 100, 0.5)')
     //make_isometric_cube(230, 10, -90, 20,  10,  20, 'rgba(100, 255, 100, 0.2)')
+    make_isometric_cube(-40, -450, -10, 200, 10, 10, 'rgb(100, 80, 80)')
+    make_isometric_cube(-100, -350, -10, 80, 10, 10, 'rgb(100, 80, 80)')
+    make_isometric_cube(30, -350, -10, 80, 10, 10, 'rgb(100, 80, 80)')
+    make_isometric_cube(-140, -400, -10, 10, 10, 100, 'rgb(100, 80, 80)')
+    make_isometric_cube(60, -400, -10, 10, 10, 100, 'rgb(100, 80, 80)')
 
     //for (let i = 0; i < 10 * 10; ++i) {
     //  ps.push(new Vector(~~(i % 10) * 20, ~~(i / 10) * 20, 0))
