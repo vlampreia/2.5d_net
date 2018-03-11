@@ -95,7 +95,7 @@ class MeshSystem extends System {
 
     const source_positions = [
       this.cursor,
-      new Vector(50, 50, 0),
+      new Vector(50, 200, 0),
       new Vector(800, 300, 0),
       //this.cursor.add_v(new Vector( 5, 0, 0)),
       //this.cursor.add_v(new Vector(-5, 0, 0)),
@@ -104,8 +104,8 @@ class MeshSystem extends System {
     ]
 
     //const v1 = this.cursor
-    source_positions.forEach((source_position) => {
-      const v1 = source_position
+    for (let spi = 0; spi < source_positions.length; ++spi) {
+      const v1 = source_positions[spi]
 
       let vis = []
 
@@ -229,7 +229,7 @@ class MeshSystem extends System {
             //  })
           }
         }
-      })
+      }
 
       //this.vertices.forEach((v2) => {
       //  let seen = true
@@ -331,12 +331,14 @@ class MeshSystem extends System {
         //this.ctx.lineTo(v1.x, v1.y)
         //this.ctx.fill()
       }
+      this.ctx.closePath()
       this.ctx.setTransform(1, 0, 0, 0.5, 0, 0)
 
+      //this.ctx.globalCompositeOperation = 'destination-out'
+      this.ctx.globalCompositeOperation = 'screen'
       const gradient = this.ctx.createRadialGradient(v1.x, v1.y * 2, 0, v1.x, v1.y * 2, 1000)
-      gradient.addColorStop(0, 'rgba(255, 0, 0, 0.5)')
+      gradient.addColorStop(0, `rgba(255, ${~~(255/source_positions.length)*spi}, 0, 1.0)`)
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-      //this.ctx.globalCompositeOperation = 'destination-in'
       this.ctx.fillStyle = gradient
       this.ctx.fill()
     this.ctx.resetTransform()
