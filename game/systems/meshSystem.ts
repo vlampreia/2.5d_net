@@ -30,6 +30,10 @@ class MeshSystem extends System {
     this.vertices.push(new Vector(this.ctx.canvas.width, 0, 0))
     this.vertices.push(new Vector(this.ctx.canvas.width, this.ctx.canvas.height, 0))
     this.vertices.push(new Vector(0, this.ctx.canvas.height, 0))
+    this.lines.push([this.vertices[0], this.vertices[1])
+    this.lines.push([this.vertices[1], this.vertices[2])
+    this.lines.push([this.vertices[2], this.vertices[3])
+    this.lines.push([this.vertices[3], this.vertices[0])
     return true
   }
 
@@ -88,6 +92,19 @@ class MeshSystem extends System {
       return end
     }
 
+    const get_seg_normal = (v1, v2) => {
+      return new Vector(
+        + (v2.y - v1.y),
+        - (v2.x - v1.x),
+        0
+      )
+    }
+
+    const get_cross_product = (v1, v2) => {
+      return v1.x * v2.y - v1.y * v2.x
+    }
+
+    let backfacing = false
     this.vertices.forEach((v2) => {
       let seen = true
 
@@ -97,9 +114,21 @@ class MeshSystem extends System {
 
       for (let i=0; i<this.lines.length; ++i) {
         const l = this.lines[i]
+
+        const normal = get_seg_normal(l[0], l[1])
+        const x = l[0].sub_v(v1)
+        if (get_cross_product(x, normal) >= 0) {
+          backfacing = true
+        }
+
         const intersection_point = get_intersection_point(v1, v2, l[0], l[1])
         if (intersection_point) {
-          if (!closest_intersection_point || closest_intersection_point > intersection_point) closest_intersection_point = intersection_point
+          if (
+            !closest_intersection_point ||
+            closest_intersection_point > intersection_point
+          ) {
+            closest_intersection_point = intersection_point
+          }
             //intersections.push(intersection)
           //vis.push(intersection)
           //seen = false
@@ -110,8 +139,12 @@ class MeshSystem extends System {
       if (!closest_intersection_point) {
         //const extended = extend(v1, v2, 100)
         vis.push(v2)
-      } else {
-        const point = new Vector(v1.x + closest_intersection_point * (v2.x - v1.x), v1.y + closest_intersection_point * (v2.y - v1.y), 0)
+      } else if (!backfacing) {
+        const point = new Vector(
+          v1.x + closest_intersection_point * (v2.x - v1.x),
+          v1.y + closest_intersection_point * (v2.y - v1.y),
+          0
+        )
         vis.push(point)
       }
     })
