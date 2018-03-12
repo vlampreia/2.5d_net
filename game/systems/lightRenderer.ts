@@ -28,6 +28,14 @@ const lt = (a, b, c) => {
   return d1 > d2
 }
 
+const radial_sort = (centre_vertex, vertices) => {
+  // XXX: if shadows start to look funky, uncomment
+  // TODO: verify this
+  return vertices.sort((a, b) => {
+    return lt(a, b, centre_vertex) ? -1 : 1// lt(b, a, centre_vertex) ? 1 : 0
+  })
+}
+
 const get_intersection_point = (a1, a2, b1, b2) => {
   const dx = (b2.y - b1.y) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.y - a1.y)
 
@@ -47,6 +55,7 @@ const get_intersection_point = (a1, a2, b1, b2) => {
 
   return null
 }
+
 const extend = (p1, p2, factor) => {
   return p2.add_v(p2.sub_v(p1).normalise().mul_f(factor))
 }
@@ -67,47 +76,10 @@ const get_dot_product = (v1, v2) => {
   return v1.x * v2.x + v1.y * v2.y
 }
 
-class LightRenderer extends System {
-  camera
-  camera_pos
-  camera_opt
-  ctx
-  meshes
-  cursor
-  camera_offset
-
-  constructor() {
-    super([
-      BaseComponents.TransformComponent,
-      Light
-    ])
-  }
-
-  setup() {
-    this.camera_offset = this.camera_pos.pos
-      .mul_f(this.camera_opt.scale)
-      .sub_v(this.camera_opt.view_centre)
-
-    this.ctx.globalCompositeOperation = 'screen'
-    return true
-  }
-
-  teardown() {
-    this.ctx.resetTransform()
-    this.ctx.globalCompositeOperation = 'normal'
-  }
-
-  transform_to_view(v) {
-    return new Vector((v.x - v.y), (v.x + v.y) / 2, 0)
-      .mul_f(this.camera_opt.scale)
-      .sub_v(this.camera_offset)
-  }
-
-  process_entity(entity, t, dt, { transformComponent, light }) {
-    const v1 = this.transform_to_view(transformComponent.pos)
-    let los_region = []
-
-    this.meshes.forEach((target_mesh) => {
+const get_line_of_sight = (v, meshes) => {
+  const los_region = []
+  const v1 = v
+    meshes.forEach((target_mesh) => {
       for (let tvi = 0; tvi < target_mesh.vertices.length; ++tvi) {
         let closest_intersection_point = null
 
@@ -148,8 +120,8 @@ class LightRenderer extends System {
           const target = targets[ti]
           let closest_intersection_point = null
           let hide = false
-          for (let omi = 0; omi < this.meshes.length; ++omi) {
-            const other_mesh = this.meshes[omi]
+          for (let omi = 0; omi < meshes.length; ++omi) {
+            const other_mesh = meshes[omi]
 
             for (let ovi = 0; ovi < other_mesh.vertices.length; ++ovi) {
               /* we don't need to check l/r of each vertex because we're running
@@ -196,31 +168,67 @@ class LightRenderer extends System {
         }
       }
     })
+  return los_region
+}
 
-    los_region = los_region.sort((a, b) => {
-      return lt(a, b, v1) ? -1 : lt(b, a, v1) ? 1 : 0
-    })
+class LightRenderer extends System {
+  camera
+  camera_pos
+  camera_opt
+  ctx
+  meshes
+  cursor
+  camera_offset
 
-    this.ctx.fillStyle = 'rgb(255, 255, 255)'
-    this.ctx.fillRect(v1.x-2, v1.y-2, 5, 5)
+  constructor() {
+    super([
+      BaseComponents.TransformComponent,
+      Light
+    ])
+  }
 
+  setup() {
+    this.camera_offset = this.camera_pos.pos
+      .mul_f(this.camera_opt.scale)
+      .sub_v(this.camera_opt.view_centre)
+
+    this.ctx.globalCompositeOperation = 'screen'
+    return true
+  }
+
+  teardown() {
+    this.ctx.resetTransform()
+    this.ctx.globalCompositeOperation = 'normal'
+  }
+
+  transform_to_view(v) {
+    return new Vector((v.x - v.y), (v.x + v.y) / 2, 0)
+      .mul_f(this.camera_opt.scale)
+      .sub_v(this.camera_offset)
+  }
+
+  process_entity(entity, t, dt, { transformComponent, light }) {
+    const v1 = this.transform_to_view(transformComponent.pos)
+    let los_region = get_line_of_sight(v1, this.meshes)
+
+    los_region = radial_sort(v1, los_region)
+
+    this.ctx.save()
     this.ctx.beginPath()
     for (let i=0; i < los_region.length; ++i) {
       this.ctx.lineTo(los_region[i].x, los_region[i].y)
     }
 
-    this.ctx.save()
     this.ctx.clip()
 
     this.ctx.setTransform(1, 0, 0, 0.5, 0, 0)
 
-    //this.ctx.globalCompositeOperation = 'destination-out'
-    //const gradient = this.ctx.createRadialGradient(v1.x, v1.y * 2, 0, v1.x, v1.y * 2, 1000)
-    //gradient.addColorStop(0, light.colour)
-    //gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-    //this.ctx.fillStyle = gradient
-    this.ctx.drawImage(light.renderable, ~~(v1.x - light.renderable.width / 2), ~~(v1.y*2 - light.renderable.height / 2))
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0)
+    this.ctx.drawImage(
+      light.renderable,
+      ~~(v1.x - light.renderable.width / 2),
+      ~~(v1.y*2 - light.renderable.height / 2)
+    )
+
     this.ctx.restore()
   }
 

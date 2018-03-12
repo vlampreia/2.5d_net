@@ -81,7 +81,7 @@ class IsometricRenderSystem extends System {
       )//.sub_v(dims.div_f(2))
 
     buffer.setTransform(
-      this.camera_opt.scale, 0, 0, this.camera_opt.scale / 2,
+      this.camera_opt.scale, 0, 0, this.camera_opt.scale,
       transf_pos.x,
       transf_pos.y
     )

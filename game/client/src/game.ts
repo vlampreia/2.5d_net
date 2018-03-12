@@ -254,6 +254,7 @@ class Game {
       const e = this.engine._ecs.create_entity()
       const t = this.engine._ecs.set_entity_component(e, new BaseComponents.TransformComponent())
       const l = this.engine._ecs.set_entity_component(e, new Light())
+      const r = this.engine._ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
 
       t.pos = new Vector(x, y, 0)
       t.pos_prev = t.pos
@@ -267,7 +268,7 @@ class Game {
       const h = range * 2
       l.renderable.width = w
       l.renderable.height = h
-      const ctx = l.renderable.getContext('2d')
+      let ctx = l.renderable.getContext('2d')
       //ctx.setTransform(1, 0, 0, 0.5, 0, 0)
 
       //const gradient = this.ctx.createRadialGradient(v1.x, v1.y * 2, 0, v1.x, v1.y * 2, 1000)
@@ -277,10 +278,17 @@ class Game {
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, w, h)
 
+      r.canvas = document.createElement('canvas')
+      ctx = r.canvas.getContext('2d')
+      ctx.fillStyle = 'rgb(255, 255, 255)'
+      ctx.fillRect(0, 0, 3, 3)
+      r.midpoint = new Vector(1, 1, 0)
+
       return t
     }
 
-    make_light(381, 150, 'rgba(255, 10, 0, 0.8)')
+    /* 380 shows bug in shadow? system */
+    make_light(380, 150, 'rgba(255, 10, 0, 0.8)')
     make_light(60, -151, 'rgb(55, 10, 255)')
     make_light(-400, -120, 'rgb(255, 205, 100)')
     this.cursor_light = make_light(0, 0, 'rgb(100, 50, 10)')
