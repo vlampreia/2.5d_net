@@ -15,6 +15,7 @@ import AccelerationComponent from '../../components/accelerationComponent'
 import PlayerControlledComponent from '../../components/playerControlledComponent'
 import WaypointComponent from '../../components/waypointComponent'
 import MeshComponent from '../../components/meshComponent'
+import Light from '../../components/light.component'
 
 import PlayerNetworkUpdateSystem from '../../systems/playernetworkUpdateSystem'
 import TransformFollowerSystem from '../../systems/transformFollowerSystem'
@@ -22,6 +23,7 @@ import MotionSystem from '../../systems/motionSystem'
 import PlayerController from '../../systems/playerController'
 import WaypointSystem from '../../systems/waypointSystem'
 import MeshSystem from '../../systems/meshSystem'
+import LightRenderer from '../../systems/lightRenderer'
 
 import Vector from 'common'
 
@@ -38,6 +40,7 @@ class Game {
   targeted
   input_text
   mouse_e_t
+  cursor_light
     //this.blocks.forEach(b => this.network.enqueue_msg(client_id, 'place_block', { block: b }))
     //this.network.enqueue_msg(client_id, )
     //
@@ -90,6 +93,7 @@ class Game {
       motion_system: new MotionSystem(),
       waypoint_system: new WaypointSystem(),
       mesh_test_system: new MeshSystem(),
+      light_renderer: new LightRenderer(),
       //player_controller: new PlayerController(this.event_manager),
     }
     Object.values(this.systems)
@@ -106,6 +110,7 @@ class Game {
       AccelerationComponent,
       WaypointComponent,
       MeshComponent,
+      Light,
       //PlayerControlledComponent
     }
     Object.values(this.component_classes)
@@ -241,6 +246,53 @@ class Game {
     this.selected_entity = null;
 
     this.create_boxes()
+    this.create_lights()
+  }
+
+  create_lights() {
+    const make_light = (x, y, colour) => {
+      const e = this.engine._ecs.create_entity()
+      const t = this.engine._ecs.set_entity_component(e, new BaseComponents.TransformComponent())
+      const l = this.engine._ecs.set_entity_component(e, new Light())
+
+      t.pos = new Vector(x, y, 0)
+      t.pos_prev = t.pos
+      t.pos_next = t.pos
+
+      l.colour = colour
+
+      l.renderable = document.createElement('canvas')
+      const range = 700
+      const w = range * 2
+      const h = range * 2
+      l.renderable.width = w
+      l.renderable.height = h
+      const ctx = l.renderable.getContext('2d')
+      //ctx.setTransform(1, 0, 0, 0.5, 0, 0)
+
+      //const gradient = this.ctx.createRadialGradient(v1.x, v1.y * 2, 0, v1.x, v1.y * 2, 1000)
+      const gradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, range)
+      gradient.addColorStop(0, colour)
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, w, h)
+
+      return t
+    }
+
+    make_light(381, 150, 'rgba(255, 10, 0, 0.8)')
+    make_light(60, -151, 'rgb(55, 10, 255)')
+    make_light(-400, -120, 'rgb(255, 205, 100)')
+    this.cursor_light = make_light(0, 0, 'rgb(100, 50, 10)')
+    make_light(500, 500, 'rgb(0, 255, 0)')
+    make_light(-200, 500, 'rgb(0, 255, 0)')
+    make_light(500, -300, 'rgb(0, 255, 0)')
+    make_light(-200, -300, 'rgb(0, 255, 0)')
+    make_light(-220, -300, 'rgb(0, 255, 0)')
+    make_light(-220, -330, 'rgb(0, 255, 0)')
+    make_light(-200, -200, 'rgb(0, 255, 0)')
+    make_light(-220, -200, 'rgb(0, 255, 0)')
+    make_light(-220, -230, 'rgb(0, 255, 0)')
   }
 
   create_boxes() {
@@ -284,12 +336,23 @@ class Game {
       ctx.strokeStyle = color
       ctx.fillStyle = color
 
+      //mesh.push_vertex(0, depth)
+      //mesh.push_vertex(width ,depth)
+      //mesh.push_vertex(width, 0)
+      //mesh.push_vertex(0, 0)
+
       //mesh.push_vertex(0,               ywidth / 2)
+
+      ////
       mesh.push_vertex(0,               ywidth / 2 + height)
       mesh.push_vertex(xwidth,          height + xwidth * 0.5 + ywidth * 0.5)
       mesh.push_vertex(xwidth + ywidth, height + xwidth * 0.5)
-      //mesh.push_vertex(xwidth + ywidth, xwidth * 0.5)
       mesh.push_vertex(ywidth,          height)
+      mesh.compile_normals()
+      ////
+
+      //mesh.push_vertex(xwidth + ywidth, xwidth * 0.5)
+
       //mesh.push_vertex(ywidth,          0)
       //mesh.push_vector(0,               ywidth / 2)
       //mesh.push_vector(xwidth,          xwidth * 0.5 + ywidth * 0.5)
@@ -330,23 +393,28 @@ class Game {
     //make_isometric_cube(20, -20, 40, 60, 20, 20, 'rgb(255, 255, 255)')
     //make_isometric_cube(20, -60, 40, 60, 20, 20, 'rgb(255, 255, 255)')
 
-    make_isometric_cube(90,  90, -10, 200, 50, 200, 'rgb(100, 255, 100)')
+    make_isometric_cube(90,  90, 0, 200, 50, 200, 'rgb(100, 255, 100)')
     //make_isometric_cube(90,  90,  20, 150, 10, 150, 'rgba(100, 255, 100, 0.8)')
     //make_isometric_cube(90,  90,  50, 100, 10, 100, 'rgba(100, 255, 100, 0.5)')
     //make_isometric_cube(90,  90,  80, 50,  10,  50, 'rgba(100, 255, 100, 0.2)')
-    make_isometric_cube(330, 90, -10, 40,  10,  40, 'rgb(100, 255, 100)')
-    make_isometric_cube(-40, 320, -10, 200, 20, 20, 'rgb(100, 100, 255)')
-    make_isometric_cube(180, 320, -10, 100, 20, 20, 'rgb(100, 100, 255)')
+    make_isometric_cube(330, 90, 0, 40,  10,  40, 'rgb(100, 255, 100)')
+    make_isometric_cube(-40, 320, 0, 200, 20, 20, 'rgb(100, 100, 255)')
+    make_isometric_cube(180, 320, 0, 100, 20, 20, 'rgb(100, 100, 255)')
     //make_isometric_cube(230, 50, -10, 20,  10,  20, 'rgb(100, 255, 100)')
     //make_isometric_cube(230, 10, -10, 20,  10,  20, 'rgb(100, 255, 100)')
     //make_isometric_cube(230, 50, -50, 20,  10,  20, 'rgba(100, 255, 100, 0.5)')
     //make_isometric_cube(230, 10, -50, 20,  10,  20, 'rgba(100, 255, 100, 0.5)')
     //make_isometric_cube(230, 10, -90, 20,  10,  20, 'rgba(100, 255, 100, 0.2)')
-    make_isometric_cube(-40, -450, -10, 200, 10, 10, 'rgb(100, 80, 80)')
-    make_isometric_cube(-100, -350, -10, 80, 10, 10, 'rgb(100, 80, 80)')
-    make_isometric_cube(30, -350, -10, 80, 10, 10, 'rgb(100, 80, 80)')
-    make_isometric_cube(-140, -400, -10, 10, 10, 100, 'rgb(100, 80, 80)')
-    make_isometric_cube(60, -400, -10, 10, 10, 100, 'rgb(100, 80, 80)')
+    make_isometric_cube(-40, -450, 0, 200, 10, 10, 'rgb(100, 80, 80)')
+    make_isometric_cube(-100, -350, 0, 80, 10, 10, 'rgb(100, 80, 80)')
+    make_isometric_cube(30, -350, 0, 80, 10, 10, 'rgb(100, 80, 80)')
+    make_isometric_cube(-140, -400, 0, 10, 10, 100, 'rgb(100, 80, 80)')
+    make_isometric_cube(60, -400, 0, 10, 10, 100, 'rgb(100, 80, 80)')
+
+    make_isometric_cube(-500, -200, 0, 20, 10, 2000, 'rgv(100, 100, 100)')
+    make_isometric_cube(500, -600, 0, 2000, 10, 20, 'rgv(100, 100, 100)')
+    make_isometric_cube(1000, -200, 0, 20, 10, 2000, 'rgv(100, 100, 100)')
+    make_isometric_cube(500, 600, 0, 2000, 10, 20, 'rgv(100, 100, 100)')
 
     //for (let i = 0; i < 10 * 10; ++i) {
     //  ps.push(new Vector(~~(i % 10) * 20, ~~(i / 10) * 20, 0))
@@ -392,6 +460,9 @@ class Game {
 
     world_pos.x = -(x - y)
     world_pos.y = (x + y) 
+
+    this.cursor_light.pos.x = world_pos.x
+    this.cursor_light.pos.y = world_pos.y
 
     //this.mouse_e_t.pos.x = world_pos.x
     //this.mouse_e_t.pos.y = world_pos.y
@@ -632,10 +703,64 @@ class Game {
   }
 
   render_stuff(ctx) {
-    this.systems.mesh_test_system.set_ctx(ctx)
-    this.systems.mesh_test_system.set_camera(this.camera)
-    this.systems.mesh_test_system.set_cursor(this.engine.mouse_pos)
-    this.systems.mesh_test_system.update()
+    //this.systems.mesh_test_system.set_ctx(ctx)
+    //this.systems.mesh_test_system.set_camera(this.camera)
+    //this.systems.mesh_test_system.set_cursor(this.engine.mouse_pos)
+    //this.systems.mesh_test_system.update()
+
+    const meshes = []
+    const smeshes = this.engine._ecs.components[MeshComponent.get_type()]
+    const transforms = this.engine._ecs.components[BaseComponents.TransformComponent.get_type()]
+
+    const camera_pos = this.engine._ecs
+      .get_entity_component(this.camera, BaseComponents.TransformComponent)
+    const camera_opt = this.engine._ecs
+      .get_entity_component(this.camera, BaseComponents.CameraComponent)
+
+    for (let i=0; i<smeshes.length; ++i) {
+      const mesh = smeshes[i]
+      if (!mesh) continue
+
+
+      const pos = transforms[i].pos
+      const m = Object.assign({}, mesh)
+
+      m.vertices = mesh.vertices.map((v) => {
+        const offset = new Vector(
+            ((pos.x - pos.y) ), 
+            ((pos.x + pos.y) ) / 2 ,//- (mesh.mid.y) - v.z,
+           0)
+      const t = v.add_v(offset).sub_v(mesh.mid)
+          .mul_f(camera_opt.scale) 
+          .sub_v(camera_pos.pos.mul_f(camera_opt.scale) 
+           .sub_v(camera_opt.view_centre))
+
+        return t
+      })
+      //m.vertices = mesh.vertices.map((v) => v.add_v(pos).sub_v(mesh.mid))
+
+      meshes.push(m)
+      //meshes.push(Object.assign({}, m, { pos } )
+    }
+
+
+    let world_pos = new Vector(this.engine.mouse_pos.x, this.engine.mouse_pos.y, 0)
+      .add_v(camera_pos.pos
+        .mul_f(camera_opt.scale)
+        .sub_v(camera_opt.view_centre)
+      )
+      .div_f(camera_opt.scale)
+
+    const x = - ~~world_pos.x / 2
+    const y = ~~world_pos.y
+
+    world_pos.x = -(x - y)
+    world_pos.y = (x + y) 
+    this.systems.light_renderer.set_cursor(world_pos)
+    this.systems.light_renderer.set_ctx(ctx)
+    this.systems.light_renderer.set_camera(this.camera)
+    this.systems.light_renderer.set_meshes(meshes)
+    this.systems.light_renderer.update()
   }
 
   render_bg() {

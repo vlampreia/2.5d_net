@@ -69,7 +69,8 @@ class IsometricRenderSystem extends System {
     )
 
     const transf_pos = new Vector(
-      (transformComponent.pos.x - transformComponent.pos.y) - (renderableComponent.midpoint.x),
+      (transformComponent.pos.x - transformComponent.pos.y) 
+        - (renderableComponent.midpoint.x),
       (transformComponent.pos.x + transformComponent.pos.y)/2
         - (renderableComponent.midpoint.y) - transformComponent.pos.z,
       0
@@ -80,7 +81,7 @@ class IsometricRenderSystem extends System {
       )//.sub_v(dims.div_f(2))
 
     buffer.setTransform(
-      this.camera_opt.scale, 0, 0, this.camera_opt.scale,
+      this.camera_opt.scale, 0, 0, this.camera_opt.scale / 2,
       transf_pos.x,
       transf_pos.y
     )

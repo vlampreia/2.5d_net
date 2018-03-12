@@ -230,57 +230,7 @@ class MeshSystem extends System {
             //  })
           }
         }
-      }
-
-      //this.vertices.forEach((v2) => {
-      //  let seen = true
-      //  let backfacing = false
-      //  const extended = extend(v1, v2, 100)
-      //  let closest_intersection_point = null
-
-      //  for (let i=0; i<this.lines.length; ++i) {
-      //    const l = this.lines[i]
-
-      //    const normal = get_seg_normal(l[0], l[1])
-      //    this.ctx.beginPath()
-      //    this.ctx.moveTo(l[0].x, l[0].y)
-      //    const rzxx = normal.add_v(l[0])
-      //    this.ctx.lineTo(rzxx.x, rzxx.y)
-      //    this.ctx.stroke()
-      //    if (get_dot_product(l[0].sub_v(v1), normal) >= 0) {
-      //      //continue
-      //    }
-
-      //    //backfacing = false
-
-      //    const intersection_point = get_intersection_point(v1, v2, l[0], l[1])
-      //    if (intersection_point) {
-      //      if (
-      //        !closest_intersection_point ||
-      //        closest_intersection_point > intersection_point
-      //      ) {
-      //        //backfacing = b
-      //        closest_intersection_point = intersection_point
-      //      }
-      //        //intersections.push(intersection)
-      //      //vis.push(intersection)
-      //      //seen = false
-      //      //break
-      //    }
-      //  }
-
-      //  if (!closest_intersection_point && !backfacing) {
-      //  //const extended = extend(v1, v2, 100)
-      //      vis.push(v2)
-      //  } else if(!backfacing) {
-      //    const point = new Vector(
-      //      v1.x + closest_intersection_point * (v2.x - v1.x),
-      //      v1.y + closest_intersection_point * (v2.y - v1.y),
-      //      0
-      //    )
-      //    vis.push(point)
-      //  }
-      //})
+      })
 
       const lt = (a, b, c) => {
         if (a.x - v1.x >= 0 && b.x - v1.x < 0) return true
@@ -342,7 +292,7 @@ class MeshSystem extends System {
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
       this.ctx.fillStyle = gradient
       this.ctx.fill()
-    this.ctx.resetTransform()
+      this.ctx.resetTransform()
     }
 
     this.ctx.globalCompositeOperation = 'normal'
@@ -366,48 +316,6 @@ class MeshSystem extends System {
       }
 
     this.meshes.push(mesh)
-
-      /*
-      for (let i =0 ; i<meshComponent.vertices.length; ++i) {
-        const p1 = meshComponent.vertices[i] .add_v(
-          new Vector(
-            ((transformComponent.pos.x - transformComponent.pos.y) - 2) - (meshComponent.mid.x),
-            ((transformComponent.pos.x + transformComponent.pos.y) - 2) / 2 - (meshComponent.mid.y) - transformComponent.pos.z, 0)) 
-          .mul_f(this.camera_opt.scale) 
-          .sub_v( this.camera_pos.pos.mul_f(this.camera_opt.scale) 
-            .sub_v(this.camera_opt.view_centre))
-
-        let z = i+1
-        if (z === meshComponent.vertices.length) z = 0
-        const p2 = meshComponent.vertices[z] .add_v(new Vector( (transformComponent.pos.x - transformComponent.pos.y) - 2 - (meshComponent.mid.x), ((transformComponent.pos.x + transformComponent.pos.y) - 2) / 2 - (meshComponent.mid.y) - transformComponent.pos.z, 0)) .mul_f(this.camera_opt.scale) .sub_v( this.camera_pos.pos.mul_f(this.camera_opt.scale) .sub_v(this.camera_opt.view_centre))
-        this.lines.push([p1,p2])
-      }
-      */
-    //meshComponent.vertices.forEach((v) => {
-    //  const transf_pos = new Vector(0, 0, 0)
-    //    .add_v(new Vector(
-    //       (transformComponent.pos.x - transformComponent.pos.y) - 2 - (meshComponent.mid.x),
-    //      ((transformComponent.pos.x + transformComponent.pos.y) - 2) / 2 - (meshComponent.mid.y) - transformComponent.pos.z,
-    //       0
-    //     ))
-    //    .add_v(new Vector(
-    //      v.x,
-    //      v.y,
-    //      0
-    //    ))
-    //    .mul_f(this.camera_opt.scale)
-    //    .sub_v(
-    //      this.camera_pos.pos.mul_f(this.camera_opt.scale)
-    //        .sub_v(this.camera_opt.view_centre)
-    //    )
-
-    //  this.vertices.push(transf_pos)
-
-    //  const sp = this.cursor//.sub_v(transf_pos)
-
-    //  const len = Math.sqrt(Math.pow(sp.x - transf_pos.x, 2) + Math.pow(sp.y - transf_pos.y, 2))
-    //  const end = transf_pos.add_v(transf_pos.sub_v(sp).div_f(len).mul_f(1000))
-    //  })
   }
 
   set_camera(camera) {
