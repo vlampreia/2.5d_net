@@ -8,29 +8,34 @@ import Light from '../components/light.component'
 import Vector from 'common'
 
 const lt = (a, b, c) => {
-  if (a.x - c.x >= 0 && b.x - c.x < 0) return true
-  if (a.x - c.x < 0 && b.x - c.x >= 0) return false
-  if (a.x - c.x == 0 && b.x - c.x == 0) {
-    if (a.y - c.y >= 0 || b.y - c.y >= 0) return a.y > b.y
+  const a_sub_c_x = a.x - c.x
+  const b_sub_c_x = b.x - c.x
+
+  if (a_sub_c_x >= 0 && b_sub_c_x < 0) return true
+  if (a_sub_c_x <  0 && b_sub_c_x >= 0) return false
+
+  const a_sub_c_y = a.y - c.y
+  const b_sub_c_y = b.y - c.y
+
+  if (a_sub_c_x == 0 && b_sub_c_x == 0) {
+    if (a_sub_c_y >= 0 || b_sub_c_y >= 0) return a.y > b.y
     return b.y > a.y
   }
 
   // compute the cross product of vectors (c -> a) x (c -> b)
-  const det = (a.x - c.x) * (b.y - c.y) - (b.x - c.x) * (a.y - c.y)
+  const det = (a_sub_c_x) * (b_sub_c_y) - (b_sub_c_x) * (a_sub_c_y)
   if (det < 0) return true
   if (det > 0) return false
 
   // points a and b are on the same line from the c
   // check which point is closer to the c
-  const d1 = (a.x - c.x) * (a.x - c.x) + (a.y - c.y) * (a.y - c.y)
-  const d2 = (b.x - c.x) * (b.x - c.x) + (b.y - c.y) * (b.y - c.y)
+  const d1 = (a_sub_c_x) * (a_sub_c_x) + (a_sub_c_y) * (a_sub_c_y)
+  const d2 = (b_sub_c_x) * (b_sub_c_x) + (b_sub_c_y) * (b_sub_c_y)
 
   return d1 > d2
 }
 
 const radial_sort = (centre_vertex, vertices) => {
-  // XXX: if shadows start to look funky, uncomment
-  // TODO: verify this
   return vertices.sort((a, b) => {
     return lt(a, b, centre_vertex) ? -1 : 1// lt(b, a, centre_vertex) ? 1 : 0
   })
@@ -77,98 +82,103 @@ const get_dot_product = (v1, v2) => {
 }
 
 const get_line_of_sight = (v, meshes) => {
-  const los_region = []
+  const los_region = new Array(1000)
+  let index = 0
+
   const v1 = v
-    meshes.forEach((target_mesh) => {
-      for (let tvi = 0; tvi < target_mesh.vertices.length; ++tvi) {
+  meshes.forEach((target_mesh) => {
+    for (let tvi = 0; tvi < target_mesh.vertices.length; ++tvi) {
+      const target_vertex = target_mesh.vertices[tvi]
+
+      let tvi_l = tvi - 1
+      if (tvi_l < 0) { tvi_l = target_mesh.vertices.length - 1 }
+
+      let tvi_r = tvi + 1
+      if (tvi_r >= target_mesh.vertices.length) { tvi_r = 0 }
+
+      const target_src_dx = target_vertex.sub_v(v1)
+
+      const t_seg_l_norm = target_mesh.normals[tvi_l]
+      const t_seg_r_norm = target_mesh.normals[tvi]
+      const t_seg_l_facing = (get_dot_product(target_src_dx, t_seg_l_norm) >= 0)
+      const t_seg_r_facing = (get_dot_product(target_src_dx, t_seg_r_norm) >= 0)
+
+      if (!t_seg_l_facing && !t_seg_r_facing) { continue }
+
+      const targets = new Array(2)
+      targets[0] = [ v1, target_vertex ]
+      let targets_size = 1
+
+      if (t_seg_l_facing && !t_seg_r_facing) {
+        const e = extend(v1, target_mesh.vertices[tvi], 1000)
+          .sub_v(target_mesh.vertices[tvi_l].sub_v(target_mesh.vertices[tvi]).normalise())
+
+        targets[1] = [target_mesh.vertices[tvi], e]
+        targets_size = 2
+      } else if (!t_seg_l_facing && t_seg_r_facing) {
+        const e = extend(v1, target_mesh.vertices[tvi], 1000)
+          .sub_v(target_mesh.vertices[tvi_r].sub_v(target_mesh.vertices[tvi]).normalise())
+
+        targets[1] = [target_mesh.vertices[tvi], e]
+        targets_size = 2
+      }
+
+      for (let ti = 0; ti < targets_size; ++ti) {
+        const target = targets[ti]
+
         let closest_intersection_point = null
+        let hide = false
 
-        const target_vertex = target_mesh.vertices[tvi]
+        for (let omi = 0; omi < meshes.length; ++omi) {
+          const other_mesh = meshes[omi]
 
-        let tvi_l = tvi - 1
-        if (tvi_l < 0) { tvi_l = target_mesh.vertices.length - 1 }
+          for (let ovi = 0; ovi < other_mesh.vertices.length; ++ovi) {
+            /* we don't need to check l/r of each vertex because we're running
+             * though all of them */
+            //if (other_mesh.vertices[ovi].x === target[0].x && other_mesh.vertices[ovi].y === target[0].y) { continue }
+            let ovi_r = ovi + 1
+            if (ovi_r >= other_mesh.vertices.length) { ovi_r = 0 }
+            //if (other_mesh.vertices[ovi_r].x === target[0].x && other_mesh.vertices[ovi_r].y === target[0].y) { continue }
 
-        let tvi_r = tvi + 1
-        if (tvi_r >= target_mesh.vertices.length) { tvi_r = 0 }
+            const o_seg_norm = other_mesh.normals[ovi]
+            //const o_seg_norm = get_seg_normal(other_mesh.vertices[ovi], other_mesh.vertices[ovi_r])
+            const o_seg_norm_facing = (get_dot_product(target[1].sub_v(v1), o_seg_norm) >= 0)
 
-        const target_src_dx = target_vertex.sub_v(v1)
+            if (!o_seg_norm_facing) { continue }
 
-        const t_seg_l_norm = target_mesh.normals[tvi_l]
-        const t_seg_r_norm = target_mesh.normals[tvi]
-        //const t_seg_l_norm = get_seg_normal(target_mesh.vertices[tvi_l], target_vertex)
-        //const t_seg_r_norm = get_seg_normal(target_vertex, target_mesh.vertices[tvi_r])
-        const t_seg_l_facing = (get_dot_product(target_src_dx, t_seg_l_norm) >= 0)
-        const t_seg_r_facing = (get_dot_product(target_src_dx, t_seg_r_norm) >= 0)
+            const intersection_point = get_intersection_point(v1, target[1], other_mesh.vertices[ovi], other_mesh.vertices[ovi_r])
+            if (intersection_point) {
+              if (ti === 0) {
+                // XXX: this will cause issues within closed structures
+                //hide = true
+                ti = targets.length
+              }
 
-        if (!t_seg_l_facing && !t_seg_r_facing) { continue }
-
-        const targets = [ [ v1, target_vertex ] ]
-
-        if (t_seg_l_facing && !t_seg_r_facing) {
-          const e = extend(v1, target_mesh.vertices[tvi], 1000)
-            .sub_v(target_mesh.vertices[tvi_l].sub_v(target_mesh.vertices[tvi]).normalise())
-
-          targets.push([target_mesh.vertices[tvi], e])
-        } else if (!t_seg_l_facing && t_seg_r_facing) {
-          const e = extend(v1, target_mesh.vertices[tvi], 1000)
-            .sub_v(target_mesh.vertices[tvi_r].sub_v(target_mesh.vertices[tvi]).normalise())
-
-          targets.push([target_mesh.vertices[tvi], e])
-        }
-
-        for (let ti = 0; ti < targets.length; ++ti) {
-          const target = targets[ti]
-          let closest_intersection_point = null
-          let hide = false
-          for (let omi = 0; omi < meshes.length; ++omi) {
-            const other_mesh = meshes[omi]
-
-            for (let ovi = 0; ovi < other_mesh.vertices.length; ++ovi) {
-              /* we don't need to check l/r of each vertex because we're running
-               * though all of them */
-              //if (other_mesh.vertices[ovi].x === target[0].x && other_mesh.vertices[ovi].y === target[0].y) { continue }
-              let ovi_r = ovi + 1
-              if (ovi_r >= other_mesh.vertices.length) { ovi_r = 0 }
-              //if (other_mesh.vertices[ovi_r].x === target[0].x && other_mesh.vertices[ovi_r].y === target[0].y) { continue }
-
-              const o_seg_norm = other_mesh.normals[ovi]
-              //const o_seg_norm = get_seg_normal(other_mesh.vertices[ovi], other_mesh.vertices[ovi_r])
-              const o_seg_norm_facing = (get_dot_product(target[1].sub_v(v1), o_seg_norm) >= 0)
-
-              if (!o_seg_norm_facing) { continue }
-
-              const intersection_point = get_intersection_point(v1, target[1], other_mesh.vertices[ovi], other_mesh.vertices[ovi_r])
-              if (intersection_point) {
-                if (ti === 0) {
-                  // XXX: this will cause issues within closed structures
-                  //hide = true
-                  ti = targets.length
-                }
-
-                if (!closest_intersection_point || closest_intersection_point > intersection_point) {
-                  closest_intersection_point = intersection_point
-                }
+              if (!closest_intersection_point || closest_intersection_point > intersection_point) {
+                closest_intersection_point = intersection_point
               }
             }
           }
+        }
 
-          if (!hide) {
-            if (!closest_intersection_point) {
-                los_region.push(target[1])
-            } else {
-              const point = new Vector(
-                v1.x + closest_intersection_point * (target[1].x - v1.x),
-                v1.y + closest_intersection_point * (target[1].y - v1.y),
-                0
-              )
+        if (!hide) {
+          if (!closest_intersection_point) {
+            los_region[index++] = target[1]
+          } else {
+            const point = new Vector(
+              v1.x + closest_intersection_point * (target[1].x - v1.x),
+              v1.y + closest_intersection_point * (target[1].y - v1.y),
+              0
+            )
 
-              los_region.push(point)
-            }
+            los_region[index++] = point
           }
         }
       }
-    })
-  return los_region
+    }
+  })
+
+  return { los_region, size: index }
 }
 
 class LightRenderer extends System {
@@ -209,13 +219,13 @@ class LightRenderer extends System {
 
   process_entity(entity, t, dt, { transformComponent, light }) {
     const v1 = this.transform_to_view(transformComponent.pos)
-    let los_region = get_line_of_sight(v1, this.meshes)
+    let {los_region ,size}= get_line_of_sight(v1, this.meshes)
 
     los_region = radial_sort(v1, los_region)
 
     this.ctx.save()
     this.ctx.beginPath()
-    for (let i=0; i < los_region.length; ++i) {
+    for (let i=0; i < size; ++i) {
       this.ctx.lineTo(los_region[i].x, los_region[i].y)
     }
 

@@ -288,19 +288,19 @@ class Game {
     }
 
     /* 380 shows bug in shadow? system */
-    make_light(380, 150, 'rgba(255, 10, 0, 0.8)')
-    make_light(60, -151, 'rgb(55, 10, 255)')
-    make_light(-400, -120, 'rgb(255, 205, 100)')
+    //make_light(380, 150, 'rgba(255, 10, 0, 0.8)')
+    //make_light(60, -151, 'rgb(55, 10, 255)')
+    //make_light(-400, -120, 'rgb(255, 205, 100)')
     this.cursor_light = make_light(0, 0, 'rgb(100, 50, 10)')
-    make_light(500, 500, 'rgb(0, 255, 0)')
-    make_light(-200, 500, 'rgb(0, 255, 0)')
-    make_light(500, -300, 'rgb(0, 255, 0)')
-    make_light(-200, -300, 'rgb(0, 255, 0)')
-    make_light(-220, -300, 'rgb(0, 255, 0)')
-    make_light(-220, -330, 'rgb(0, 255, 0)')
-    make_light(-200, -200, 'rgb(0, 255, 0)')
-    make_light(-220, -200, 'rgb(0, 255, 0)')
-    make_light(-220, -230, 'rgb(0, 255, 0)')
+    //make_light(500, 500, 'rgb(0, 255, 0)')
+    //make_light(-200, 500, 'rgb(0, 255, 0)')
+    //make_light(500, -300, 'rgb(0, 255, 0)')
+    //make_light(-200, -300, 'rgb(0, 255, 0)')
+    //make_light(-220, -300, 'rgb(0, 255, 0)')
+    //make_light(-220, -330, 'rgb(0, 255, 0)')
+    //make_light(-200, -200, 'rgb(0, 255, 0)')
+    //make_light(-220, -200, 'rgb(0, 255, 0)')
+    //make_light(-220, -230, 'rgb(0, 255, 0)')
   }
 
   create_boxes() {

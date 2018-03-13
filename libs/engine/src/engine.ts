@@ -67,6 +67,8 @@ class Engine {
     }
 
     this.frame_stats = {
+      frame_time_ptr: 0,
+      frame_times: new Array(50),
       last_net_update:  0,
       accumulator:      0,
       last_frame_time:  0,
@@ -143,10 +145,18 @@ class Engine {
     if (this._pre_render_hook_fn) { this._pre_render_hook_fn(ctx) }
   }
 
+  set_frame_time(t) {
+    this.frame_stats.frame_time = t
+    this.frame_stats.frame_times[this.frame_stats.frame_time_ptr++] = t
+    if (this.frame_stats.frame_time_ptr === this.frame_stats.frame_times.length) {
+      this.frame_stats.frame_time_ptr = 0
+    }
+  }
+
   main_loop(t) {
     const frame_start_time = Date.now()
 
-    this.frame_stats.frame_time = t - this.frame_stats.last_frame_time
+    this.set_frame_time(t - this.frame_stats.last_frame_time)
     this.frame_stats.last_frame_time = t
     this.frame_stats.accumulator += this.frame_stats.frame_time
 
@@ -225,7 +235,15 @@ class Engine {
     this.renderer.buffer_ctx.font = '10px mono'
     this.renderer.buffer_ctx.fillStyle = 'rgb(0, 0, 0)'
 
-    this.renderer.buffer_ctx.fillText('frame time: ' + this.frame_stats.frame_time, 10, 20)
+    let avg_frame_time = 0
+    for (let i=0; i<this.frame_stats.frame_times.length; ++i) {
+      avg_frame_time += this.frame_stats.frame_times[i]
+    }
+    avg_frame_time /= this.frame_stats.frame_times.length
+
+    //this.renderer.buffer_ctx.fillText('frame time: ' + this.frame_stats.frame_time, 10, 20)
+    this.renderer.buffer_ctx.fillText('frame time: ' + ~~avg_frame_time, 10, 20)
+    this.renderer.buffer_ctx.fillText('fps: ' + ~~(1000/avg_frame_time), 100, 20)
     this.renderer.buffer_ctx.fillText('sim time:   ' + this.frame_stats.sim_time, 10, 30)
     this.renderer.buffer_ctx.fillText('render time:' + this.frame_stats.render_time, 10, 40)
 
