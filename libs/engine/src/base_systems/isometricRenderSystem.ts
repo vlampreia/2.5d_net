@@ -50,10 +50,10 @@ class IsometricRenderSystem extends System {
       const ta = this.ecs.get_entity_component(a, TransformComponent)
       const tb = this.ecs.get_entity_component(b, TransformComponent)
 
-      const zd = ta.pos.z - tb.pos.z
+      const zd = ta.pos.y - tb.pos.y
       if (zd !== 0) { return zd }
 
-      return (ta.pos.x + ta.pos.y) - (tb.pos.x + tb.pos.y)
+      return (ta.pos.x + ta.pos.z) - (tb.pos.x + tb.pos.z)
     })
 
     super.process_entities(sorted_entities, t, dt)
@@ -64,16 +64,16 @@ class IsometricRenderSystem extends System {
 
     const dims = new Vector(
       renderableComponent.canvas.width,
-      renderableComponent.canvas.height,
-      0
+      0,
+      renderableComponent.canvas.height
     )
 
     const transf_pos = new Vector(
-      (transformComponent.pos.x - transformComponent.pos.y) 
+      (transformComponent.pos.x - transformComponent.pos.z) 
         - (renderableComponent.midpoint.x),
-      (transformComponent.pos.x + transformComponent.pos.y)/2
-        - (renderableComponent.midpoint.y) - transformComponent.pos.z,
-      0
+      0,
+      (transformComponent.pos.x + transformComponent.pos.z)/2
+        - (renderableComponent.midpoint.z) - transformComponent.pos.y
     ) .mul_f(this.camera_opt.scale)
       .sub_v(
         this.camera_pos.pos.mul_f(this.camera_opt.scale)
@@ -83,7 +83,7 @@ class IsometricRenderSystem extends System {
     buffer.setTransform(
       this.camera_opt.scale, 0, 0, this.camera_opt.scale,
       transf_pos.x,
-      transf_pos.y
+      transf_pos.z
     )
 
     buffer.drawImage(renderableComponent.canvas, 0, 0)

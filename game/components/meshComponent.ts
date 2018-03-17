@@ -6,7 +6,7 @@ import Vector from 'common'
 
 const get_seg_normal = (v1, v2) => {
   return new Vector(
-    + (v2.y - v1.y),
+    + (v2.z - v1.z),
     - (v2.x - v1.x),
     0
   )
@@ -16,6 +16,7 @@ class MeshComponent extends Component {
   vertices
   normals
   mid
+  height
 
   constructor() {
     super()
@@ -23,10 +24,11 @@ class MeshComponent extends Component {
     this.vertices = []
     this.normals = []
     this.mid = new Vector(0, 0, 0)
+    this.height = 0
   }
 
-  push_vertex(x, y) {
-    this.vertices.push(new Vector(x, y, 0))
+  push_vertex(x, z) {
+    this.vertices.push(new Vector(x, 0, z))
   }
 
   compile_normals() {

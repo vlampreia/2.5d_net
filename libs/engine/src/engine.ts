@@ -110,6 +110,10 @@ class Engine {
     this.show_dbg = false
   }
 
+  get_ecs() {
+    return this._ecs
+  }
+
   set_active_camera_entity(camera) {
     this.active_camera_entity = camera
     this.render_system.set_active_camera_entity(this.active_camera_entity)

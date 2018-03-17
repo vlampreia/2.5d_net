@@ -14,12 +14,12 @@ const lt = (a, b, c) => {
   if (a_sub_c_x >= 0 && b_sub_c_x < 0) return true
   if (a_sub_c_x <  0 && b_sub_c_x >= 0) return false
 
-  const a_sub_c_y = a.y - c.y
-  const b_sub_c_y = b.y - c.y
+  const a_sub_c_y = a.z - c.z
+  const b_sub_c_y = b.z - c.z
 
   if (a_sub_c_x == 0 && b_sub_c_x == 0) {
-    if (a_sub_c_y >= 0 || b_sub_c_y >= 0) return a.y > b.y
-    return b.y > a.y
+    if (a_sub_c_y >= 0 || b_sub_c_y >= 0) return a.z > b.z
+    return b.z > a.z
   }
 
   // compute the cross product of vectors (c -> a) x (c -> b)
@@ -42,12 +42,12 @@ const radial_sort = (centre_vertex, vertices) => {
 }
 
 const get_intersection_point = (a1, a2, b1, b2) => {
-  const dx = (b2.y - b1.y) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.y - a1.y)
+  const dx = (b2.z - b1.z) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.z - a1.z)
 
   if (dx === 0) return null
 
-  const t1 = (b2.x - b1.x) * (a1.y - b1.y) - (b2.y - b1.y) * (a1.x - b1.x)
-  const t2 = (a2.x - a1.x) * (a1.y - b1.y) - (a2.y - a1.y) * (a1.x - b1.x)
+  const t1 = (b2.x - b1.x) * (a1.z - b1.z) - (b2.z - b1.z) * (a1.x - b1.x)
+  const t2 = (a2.x - a1.x) * (a1.z - b1.z) - (a2.z - a1.z) * (a1.x - b1.x)
 
   if (t1 === 0 || t2 === 0) return null
 
@@ -67,26 +67,28 @@ const extend = (p1, p2, factor) => {
 
 const get_seg_normal = (v1, v2) => {
   return new Vector(
-    + (v2.y - v1.y),
-    - (v2.x - v1.x),
-    0
+    + (v2.z - v1.z),
+    0,
+    - (v2.x - v1.x)
   )
 }
 
 const get_cross_product = (v1, v2) => {
-  return v1.x * v2.y - v1.y * v2.x
+  return v1.x * v2.z - v1.z * v2.x
 }
 
 const get_dot_product = (v1, v2) => {
-  return v1.x * v2.x + v1.y * v2.y
+  return v1.x * v2.x + v1.z * v2.z
 }
 
 const get_line_of_sight = (v, meshes) => {
   const los_region = new Array(1000)
   let index = 0
-
   const v1 = v
+
   meshes.forEach((target_mesh) => {
+    //if (target_mesh.height !== v.y) { return }
+
     for (let tvi = 0; tvi < target_mesh.vertices.length; ++tvi) {
       const target_vertex = target_mesh.vertices[tvi]
 
@@ -129,8 +131,11 @@ const get_line_of_sight = (v, meshes) => {
         let closest_intersection_point = null
         let hide = false
 
+        /* check for blocking meshes */
         for (let omi = 0; omi < meshes.length; ++omi) {
           const other_mesh = meshes[omi]
+
+          //if (other_mesh.height !== target[1].y) { continue }
 
           for (let ovi = 0; ovi < other_mesh.vertices.length; ++ovi) {
             /* we don't need to check l/r of each vertex because we're running
@@ -167,8 +172,8 @@ const get_line_of_sight = (v, meshes) => {
           } else {
             const point = new Vector(
               v1.x + closest_intersection_point * (target[1].x - v1.x),
-              v1.y + closest_intersection_point * (target[1].y - v1.y),
-              0
+              0,
+              v1.z + closest_intersection_point * (target[1].z - v1.z)
             )
 
             los_region[index++] = point
@@ -212,21 +217,21 @@ class LightRenderer extends System {
   }
 
   transform_to_view(v) {
-    return new Vector((v.x - v.y), (v.x + v.y) / 2, 0)
+    return new Vector((v.x - v.z), 0, (v.x + v.z) / 2)
       .mul_f(this.camera_opt.scale)
       .sub_v(this.camera_offset)
   }
 
   process_entity(entity, t, dt, { transformComponent, light }) {
     const v1 = this.transform_to_view(transformComponent.pos)
-    let {los_region ,size}= get_line_of_sight(v1, this.meshes)
+    let { los_region, size} = get_line_of_sight(v1, this.meshes)
 
     los_region = radial_sort(v1, los_region)
 
     this.ctx.save()
     this.ctx.beginPath()
     for (let i=0; i < size; ++i) {
-      this.ctx.lineTo(los_region[i].x, los_region[i].y)
+      this.ctx.lineTo(los_region[i].x, los_region[i].z)
     }
 
     this.ctx.clip()
@@ -236,7 +241,7 @@ class LightRenderer extends System {
     this.ctx.drawImage(
       light.renderable,
       ~~(v1.x - light.renderable.width / 2),
-      ~~(v1.y*2 - light.renderable.height / 2)
+      ~~(v1.z*2 - light.renderable.height / 2)
     )
 
     this.ctx.restore()
