@@ -7,8 +7,8 @@ import Vector from 'common'
 const get_seg_normal = (v1, v2) => {
   return new Vector(
     + (v2.z - v1.z),
-    - (v2.x - v1.x),
-    0
+    0,
+    - (v2.x - v1.x)
   )
 }
 

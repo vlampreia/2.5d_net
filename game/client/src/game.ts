@@ -337,7 +337,7 @@ class Game {
     const camera_opt = this.engine._ecs
       .get_entity_component(this.camera, BaseComponents.CameraComponent)
 
-    let world_pos = new Vector(this.engine.mouse_pos.x, this.engine.mouse_pos.y, 0)
+    let world_pos = new Vector(this.engine.mouse_pos.x, 0, this.engine.mouse_pos.y)
       .add_v(camera_pos.pos
         .mul_f(camera_opt.scale)
         .sub_v(camera_opt.view_centre)
@@ -345,13 +345,13 @@ class Game {
       .div_f(camera_opt.scale)
 
     const x = - ~~world_pos.x / 2
-    const y = ~~world_pos.y
+    const y = ~~world_pos.z
 
     world_pos.x = -(x - y)
-    world_pos.y = (x + y) 
+    world_pos.z = (x + y) 
 
     this.cursor_light.pos.x = world_pos.x
-    this.cursor_light.pos.y = world_pos.y
+    this.cursor_light.pos.z = world_pos.z
 
     //this.mouse_e_t.pos.x = world_pos.x
     //this.mouse_e_t.pos.y = world_pos.y

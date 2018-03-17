@@ -87,7 +87,7 @@ const get_line_of_sight = (v, meshes) => {
   const v1 = v
 
   meshes.forEach((target_mesh) => {
-    //if (target_mesh.height !== v.y) { return }
+    if (target_mesh.height !== v.y) { return }
 
     for (let tvi = 0; tvi < target_mesh.vertices.length; ++tvi) {
       const target_vertex = target_mesh.vertices[tvi]
@@ -135,7 +135,7 @@ const get_line_of_sight = (v, meshes) => {
         for (let omi = 0; omi < meshes.length; ++omi) {
           const other_mesh = meshes[omi]
 
-          //if (other_mesh.height !== target[1].y) { continue }
+          if (other_mesh.height !== target[1].y) { continue }
 
           for (let ovi = 0; ovi < other_mesh.vertices.length; ++ovi) {
             /* we don't need to check l/r of each vertex because we're running

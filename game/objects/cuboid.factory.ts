@@ -44,7 +44,7 @@ class CuboidFactory {
     mesh.push_vertex(xwidth,          dimensions.y + xwidth * 0.5 + ywidth * 0.5)
     mesh.push_vertex(xwidth + ywidth, dimensions.y + xwidth * 0.5)
     mesh.push_vertex(ywidth,          dimensions.y)
-    mesh.height = position.z
+    mesh.height = position.y
     mesh.compile_normals()
     ////
 
