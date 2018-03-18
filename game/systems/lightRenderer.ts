@@ -7,6 +7,25 @@ import MeshComponent from '../components/meshComponent'
 import Light from '../components/light.component'
 import Vector from 'common'
 
+const get_cos_theta = (v1, v2) => {
+  return get_dot_product(v1, v2) / v1.magnitude() * v2.magnitude()
+}
+
+const get_reflected_intensity = (source_vector, surface_vector, surface_normal) => {
+  const light_intensity = 255
+  const diffuse = 1
+  return (diffuse * light_intensity )
+    //get_dot_product(
+    //  surface_vector.sub_v(source_vector).normalise(),
+    //  surface_normal.normalise()
+    //) ///
+   / (get_distance(source_vector, surface_vector) * 0.01)
+}
+
+const get_distance = (v1, v2) => {
+  return Math.sqrt((v1.x - v2.x) * (v1.x - v2.x) + (v1.y - v2.y) * (v1.y - v2.y) + (v1.z - v2.z) * (v1.z - v2.z))
+}
+
 const lt = (a, b, c) => {
   const a_sub_c_x = a.x - c.x
   const b_sub_c_x = b.x - c.x
@@ -35,9 +54,9 @@ const lt = (a, b, c) => {
   return d1 > d2
 }
 
-const radial_sort = (centre_vertex, vertices) => {
-  return vertices.sort((a, b) => {
-    return lt(a, b, centre_vertex) ? -1 : 1// lt(b, a, centre_vertex) ? 1 : 0
+const radial_sort = (centre_vertex, vertices, length) => {
+  return vertices.splice(0, length).sort((a, b) => {
+    return lt(a[0], b[0], centre_vertex) ? -1 : 1// lt(b, a, centre_vertex) ? 1 : 0
   })
 }
 
@@ -81,13 +100,17 @@ const get_dot_product = (v1, v2) => {
   return v1.x * v2.x + v1.z * v2.z
 }
 
-const get_line_of_sight = (v, meshes) => {
-  const los_region = new Array(1000)
+const get_line_of_sight = (v, meshes, los_region, ctx) => {
+  //const los_region = new Array(1000)
   let index = 0
   const v1 = v
+  let n = null
 
-  meshes.forEach((target_mesh) => {
-    if (target_mesh.height !== v.y) { return }
+  for (let mi = 0; mi < meshes.length; ++mi) {
+    //meshes.forEach((target_mesh) => {
+    const target_mesh = meshes[mi]
+
+    if (target_mesh.height !== v.y) { continue }
 
     for (let tvi = 0; tvi < target_mesh.vertices.length; ++tvi) {
       const target_vertex = target_mesh.vertices[tvi]
@@ -98,7 +121,7 @@ const get_line_of_sight = (v, meshes) => {
       let tvi_r = tvi + 1
       if (tvi_r >= target_mesh.vertices.length) { tvi_r = 0 }
 
-      const target_src_dx = target_vertex.sub_v(v1)
+      const target_src_dx = target_vertex.sub_v(v1).normalise()
 
       const t_seg_l_norm = target_mesh.normals[tvi_l]
       const t_seg_r_norm = target_mesh.normals[tvi]
@@ -108,20 +131,20 @@ const get_line_of_sight = (v, meshes) => {
       if (!t_seg_l_facing && !t_seg_r_facing) { continue }
 
       const targets = new Array(2)
-      targets[0] = [ v1, target_vertex ]
+      targets[0] = [ v1, target_vertex, t_seg_r_norm]
       let targets_size = 1
 
       if (t_seg_l_facing && !t_seg_r_facing) {
         const e = extend(v1, target_mesh.vertices[tvi], 1000)
           .sub_v(target_mesh.vertices[tvi_l].sub_v(target_mesh.vertices[tvi]).normalise())
 
-        targets[1] = [target_mesh.vertices[tvi], e]
+        targets[1] = [target_mesh.vertices[tvi], e, t_seg_r_norm]
         targets_size = 2
       } else if (!t_seg_l_facing && t_seg_r_facing) {
         const e = extend(v1, target_mesh.vertices[tvi], 1000)
           .sub_v(target_mesh.vertices[tvi_r].sub_v(target_mesh.vertices[tvi]).normalise())
 
-        targets[1] = [target_mesh.vertices[tvi], e]
+        targets[1] = [target_mesh.vertices[tvi], e, t_seg_r_norm]
         targets_size = 2
       }
 
@@ -147,7 +170,7 @@ const get_line_of_sight = (v, meshes) => {
 
             const o_seg_norm = other_mesh.normals[ovi]
             //const o_seg_norm = get_seg_normal(other_mesh.vertices[ovi], other_mesh.vertices[ovi_r])
-            const o_seg_norm_facing = (get_dot_product(target[1].sub_v(v1), o_seg_norm) >= 0)
+            const o_seg_norm_facing = (get_dot_product(target[1].sub_v(v1).normalise(), o_seg_norm) >= 0)
 
             if (!o_seg_norm_facing) { continue }
 
@@ -155,33 +178,51 @@ const get_line_of_sight = (v, meshes) => {
             if (intersection_point) {
               if (ti === 0) {
                 // XXX: this will cause issues within closed structures
-                //hide = true
+                hide = true
                 ti = targets.length
               }
 
               if (!closest_intersection_point || closest_intersection_point > intersection_point) {
                 closest_intersection_point = intersection_point
+                n = o_seg_norm
               }
             }
           }
         }
 
-        if (!hide) {
+        //if (!hide) {
+        let skip  = false
+          let point = null
           if (!closest_intersection_point) {
-            los_region[index++] = target[1]
+            point = target[1]
+            n = target[2]
           } else {
-            const point = new Vector(
+            point = new Vector(
               v1.x + closest_intersection_point * (target[1].x - v1.x),
               0,
               v1.z + closest_intersection_point * (target[1].z - v1.z)
             )
-
-            los_region[index++] = point
           }
-        }
+
+          if (n) {
+            let ix = null
+            if (!hide) { 
+              ix = get_reflected_intensity(v, point, n) 
+              skip = (ti !== 0)
+              ctx.strokeStyle = 'rgb(255, 0, 255)'
+              ctx.moveTo(point.x, point.z)
+              ctx.lineTo(point.x + n.x, point.z + n.z)
+              ctx.stroke()
+            }
+            //ctx.fillStyle = `rgb(${~~Math.abs(ix)}, 0, 0)`
+            //ctx.fillRect(point.x, point.z, 20, 20)
+            los_region[index++] = [point, ix, skip]
+          }
+            //}
       }
     }
-  })
+    //})
+  }
 
   return { los_region, size: index }
 }
@@ -194,12 +235,16 @@ class LightRenderer extends System {
   meshes
   cursor
   camera_offset
+  los_region
+  los_region_size
 
   constructor() {
     super([
       BaseComponents.TransformComponent,
       Light
     ])
+
+    this.los_region = new Array(1000)
   }
 
   setup() {
@@ -224,14 +269,16 @@ class LightRenderer extends System {
 
   process_entity(entity, t, dt, { transformComponent, light }) {
     const v1 = this.transform_to_view(transformComponent.pos)
-    let { los_region, size} = get_line_of_sight(v1, this.meshes)
+    let { los_region, size } = get_line_of_sight(v1, this.meshes, this.los_region, this.ctx)
+    this.los_region = los_region
+    this.los_region_size = size
 
-    los_region = radial_sort(v1, los_region)
+    this.los_region = radial_sort(v1, los_region, size)
 
     this.ctx.save()
     this.ctx.beginPath()
     for (let i=0; i < size; ++i) {
-      this.ctx.lineTo(los_region[i].x, los_region[i].z)
+      this.ctx.lineTo(this.los_region[i][0].x, this.los_region[i][0].z)
     }
 
     this.ctx.clip()
@@ -245,6 +292,11 @@ class LightRenderer extends System {
     )
 
     this.ctx.restore()
+
+    //for(let i=0; i<size; ++i) {
+    //  this.ctx.fillStyle = `rgb(${~~los_region[i][1]}, 0, 200)`
+    //  this.ctx.fillRect(los_region[i][0].x, los_region[i][0].z-50, 5, 50)
+    //}
   }
 
   set_ctx(ctx) {

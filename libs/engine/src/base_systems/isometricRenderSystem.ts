@@ -60,6 +60,7 @@ class IsometricRenderSystem extends System {
   }
 
   process_entity(entity, t, dt, { transformComponent, renderableComponent }) {
+    if (!renderableComponent.visible) { return }
     const buffer = this.render_system.buffer_ctx
 
     const dims = new Vector(

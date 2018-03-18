@@ -309,9 +309,9 @@ class Engine {
     const entities = []
 
     const rpos = new Vector(
-        (position.x - position.y)     ,
-        (position.x + position.y) / 2,
-      0
+        (position.x - position.z)     ,
+      0,
+        (position.x + position.z) / 2
     )
 
     for (let i = 0; i < this._ecs.entities.length; ++i) {
@@ -324,23 +324,28 @@ class Engine {
       const b = this._ecs.get_entity_component(e, BaseComponents.BoundsComponent)
       if (!b) { continue }
 
-      const mp = new Vector(
-        (t.pos.x - t.pos.y)    , //- (b.offset.x),
-        (t.pos.x + t.pos.y) / 2 - (b.offset.y) - t.pos.z,
-        0
-      )
+        const mp = new Vector(
+          (t.pos.x - t.pos.z)    , //- (b.offset.x),
+          0,
+          (t.pos.x + t.pos.z) / 2 - (b.offset.z) - t.pos.y
+        )
 
       //console.log(rpos, mp)
 
       //const mp = new Vector(
       //  (t.pos.x),//+ (b.offset.x),
+      //  0,
       //  (t.pos.y)- (b.offset.y),
-      //  0
       //)
+      //if (position.x < mp.x - b.width / 2) { continue }
+      //if (position.x > mp.x + b.width / 2) { continue }
+      //if (position.z < mp.z - b.height / 2) { continue }
+      //if (position.z > mp.z + b.height / 2) { continue }
+
       if (rpos.x < mp.x - b.width / 2) { continue }
       if (rpos.x > mp.x + b.width / 2) { continue }
-      if (rpos.y < mp.y - b.height / 2) { continue }
-      if (rpos.y > mp.y + b.height / 2) { continue }
+      if (rpos.z < mp.z - b.height / 2) { continue }
+      if (rpos.z > mp.z + b.height / 2) { continue }
 
       entities.push({ e: e, pos: t.pos })
     }

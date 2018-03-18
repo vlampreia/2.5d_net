@@ -9,7 +9,7 @@ const get_seg_normal = (v1, v2) => {
     + (v2.z - v1.z),
     0,
     - (v2.x - v1.x)
-  )
+  ).normalise()
 }
 
 class MeshComponent extends Component {

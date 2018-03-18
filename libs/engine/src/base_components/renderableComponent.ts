@@ -6,6 +6,7 @@ import Vector from 'common'
 class RenderableComponent extends Component {
   canvas
   midpoint
+  visible
 
   constructor() {
     super()
