@@ -7,19 +7,32 @@ import MeshComponent from '../components/meshComponent'
 import Light from '../components/light.component'
 import Vector from 'common'
 
+const make_isometric = (v) => {
+  return new Vector((v.x - v.z), 0, (v.x + v.z) / 2)
+}
+
+const iso_to_cartesian = (v) => {
+  return new Vector(
+    (2 * v.z + v.x) / 2,
+    0,
+    (2 * v.z - v.x) / 2
+  )
+}
+
 const get_cos_theta = (v1, v2) => {
   return get_dot_product(v1, v2) / v1.magnitude() * v2.magnitude()
 }
 
 const get_reflected_intensity = (source_vector, surface_vector, surface_normal) => {
-  const light_intensity = 255
+  const light_intensity = 1
   const diffuse = 1
   return (diffuse * light_intensity )
     //get_dot_product(
     //  surface_vector.sub_v(source_vector).normalise(),
     //  surface_normal.normalise()
     //) ///
-   / (get_distance(source_vector, surface_vector) * 0.01)
+  /// (get_distance(source_vector, surface_vector) * 0.01)
+  / (get_distance(source_vector, surface_vector) * 1)
 }
 
 const get_distance = (v1, v2) => {
@@ -209,10 +222,10 @@ const get_line_of_sight = (v, meshes, los_region, ctx) => {
             if (!hide) { 
               ix = get_reflected_intensity(v, point, n) 
               skip = (ti !== 0)
-              ctx.strokeStyle = 'rgb(255, 0, 255)'
-              ctx.moveTo(point.x, point.z)
-              ctx.lineTo(point.x + n.x, point.z + n.z)
-              ctx.stroke()
+              //ctx.strokeStyle = 'rgb(255, 0, 255)'
+              //ctx.moveTo(point.x, point.z)
+              //ctx.lineTo(point.x + n.x, point.z + n.z)
+              //ctx.stroke()
             }
             //ctx.fillStyle = `rgb(${~~Math.abs(ix)}, 0, 0)`
             //ctx.fillRect(point.x, point.z, 20, 20)
@@ -245,6 +258,10 @@ class LightRenderer extends System {
     ])
 
     this.los_region = new Array(1000)
+    this.floor_canvas = document.createElement('canvas')
+    this.floor_ctx = this.floor_canvas.getContext('2d')
+    this.overlay_canvas = document.createElement('canvas')
+    this.overlay_ctx = this.overlay_canvas.getContext('2d')
   }
 
   setup() {
@@ -253,16 +270,19 @@ class LightRenderer extends System {
       .sub_v(this.camera_opt.view_centre)
 
     this.ctx.globalCompositeOperation = 'screen'
+    //this.overlay_ctx.clearRect(0, 0, this.overlay_canvas.width, this.overlay_canvas.height)
+    this.overlay_ctx.globalCompositeOperation = 'screen'
     return true
   }
 
   teardown() {
     this.ctx.resetTransform()
     this.ctx.globalCompositeOperation = 'normal'
+    //this.ctx.drawImage(this.overlay_canvas, 0, 0)
   }
 
   transform_to_view(v) {
-    return new Vector((v.x - v.z), 0, (v.x + v.z) / 2)
+    return make_isometric(v)
       .mul_f(this.camera_opt.scale)
       .sub_v(this.camera_offset)
   }
@@ -275,23 +295,137 @@ class LightRenderer extends System {
 
     this.los_region = radial_sort(v1, los_region, size)
 
-    this.ctx.save()
-    this.ctx.beginPath()
+    this.floor_ctx.save()
+    this.floor_ctx.beginPath()
     for (let i=0; i < size; ++i) {
-      this.ctx.lineTo(this.los_region[i][0].x, this.los_region[i][0].z)
+      this.floor_ctx.lineTo(this.los_region[i][0].x, this.los_region[i][0].z)
     }
 
-    this.ctx.clip()
+    this.floor_ctx.clip()
 
-    this.ctx.setTransform(1, 0, 0, 0.5, 0, 0)
+    this.floor_ctx.setTransform(1, 0, 0, 0.5, 0, 0)
 
-    this.ctx.drawImage(
+    this.floor_ctx.drawImage(
       light.renderable,
       ~~(v1.x - light.renderable.width / 2),
       ~~(v1.z*2 - light.renderable.height / 2)
     )
 
-    this.ctx.restore()
+    this.floor_ctx.restore()
+
+
+    /* render verticals */
+    const vr = this.los_region
+    const vrl = size
+    const visible_segs = {}
+
+    for (let i=0; i < vrl; ++i) {
+      if (!vr[i][1]) { continue }
+
+      const wp = new Vector(vr[i][0].x, 0, vr[i][0].z)
+        .add_v(this.camera_pos.pos
+          .mul_f(this.camera_opt.scale)
+          .sub_v(this.camera_opt.view_centre)
+        )
+        .div_f(this.camera_opt.scale)
+
+      const x =  (~~wp.x)
+      const z =  (~~wp.z)
+
+      wp.x = ( 2 * z + x) / 2
+      wp.z = ( 2 * z - x) / 2
+
+      const e = this.get_e_at(wp)
+      //const e = this.engine.get_entity_at(wp)
+      if (!e) { continue }
+      //let z = i+1
+      //if ( z == vrl) { z = 0 }
+
+      const m = this.ecs.get_entity_component(e, MeshComponent)
+      if (!m) { continue }
+        /*
+      const r = this.engine._ecs.get_entity_component(e, BaseComponents.RenderableComponent)
+      if (!r) { continue }
+      r.visible = true
+      */
+
+      const h = m.vertices[3].z
+
+      if (!visible_segs[e.id]) {
+        visible_segs[e.id] = []
+      }
+      visible_segs[e.id].push([vr[i][0], h, vr[i][2], vr[i][1])
+
+        /*
+      this.ctx.beginPath()
+      this.ctx.moveTo(vr[i][0].x, vr[i][0].z)
+      //ctx.lineTo(vr[z][0].x, vr[z][0].z)
+      //ctx.lineTo(vr[z][0].x, vr[z][0].z - 50)
+      this.ctx.lineTo(vr[i][0].x, vr[i][0].z - h)
+      //ctx.fillStyle = `rgb(${~~vr[i][1]}, 0, 200)`
+      this.ctx.strokeStyle = 'rgb(255, 0, 0)'
+      //ctx.fillRect(vr[i][0].x, vr[i][0].z - 50, 5, 50)
+      this.ctx.stroke()
+      this.ctx.closePath()
+      */
+    }
+
+    this.overlay_ctx.strokeStyle = 'rgb(0, 0, 255)'
+    //ctx.fillStyle = 'rgb(255,255, 255)'
+    let prev_hide = false
+    Object.keys(visible_segs).forEach((k) => {
+      const esegs = visible_segs[k]
+      //for (let i=0; i<visible_segs.length; ++i) {
+      for (let j=0; j<esegs.length; ++j) {
+        let nj = j + 1
+        if (nj === esegs.length) { nj = 0 }
+        let pj = j - 1
+        if (pj === -1) { pj = esegs.length - 1 }
+        const seg = esegs[j]
+        const nseg = esegs[nj]
+        const pseg = esegs[pj]
+        this.overlay_ctx.fillStyle = 'rgb(255, 255, 255)'
+        //this.ctx.fillText(`${j}`, seg[0].x, seg[0].z)
+        //this.ctx.fillText(`${seg[3]}`, seg[0].x, seg[0].z + 20)
+        if (j === esegs.length - 1) { break }
+        if ((prev_hide) || j===0 || !seg[2] || !nseg[2] || esegs.length === 2) {
+          const ix1 = seg[3] * 50
+          const ix2 = nseg[3] * 50
+          const normal = get_seg_normal(nseg[0], seg[0])
+          /* remove walls not facing the camera */
+          // XXX: can be optimised to remove the -1 addition
+          let facing = (get_dot_product(seg[0].sub_v(seg[0].add_v(new Vector(0, 0, 1))).normalise(), normal) >= 0)
+          if (!facing) { continue }
+          /* XXX: this hack removes close backfacing verticals and diagonals */
+          facing = (get_dot_product(seg[0].sub_v(v1).normalise(), normal) >= 0)
+          if (!facing) { continue }
+          //const ix1 = ~~Math.min(255, Math.max(0, seg[3]))
+          //const ix2 = ~~Math.min(255, Math.max(0, nseg[3]))
+          const ix = ~~((ix1 + ix2) /2 )
+          const gradient = this.overlay_ctx.createLinearGradient(seg[0].x, 0, nseg[0].x, 0)//Math.abs(nseg[0].sub_v(seg[0]).x), 0)
+          gradient.addColorStop(0, `rgb(${~~(Math.min(light.r, light.r * ix1))}, ${~~(Math.min(light.g, light.g * ix1))}, ${~~(Math.min(light.b, (light.b * ix1))}`)
+          gradient.addColorStop(1, `rgb(${~~(Math.min(light.r, light.r * ix2))}, ${~~(Math.min(light.g, light.g * ix2))}, ${~~(Math.min(light.b, (light.b * ix2))}`)
+          this.overlay_ctx.fillStyle = gradient
+          //ctx.fillStyle = `rgba(${ix}, 0, 0, 1.0)`
+          this.overlay_ctx.beginPath()
+          this.overlay_ctx.moveTo(seg[0].x,  seg[0].z)
+          this.overlay_ctx.lineTo(nseg[0].x, nseg[0].z)
+          this.overlay_ctx.lineTo(nseg[0].x, nseg[0].z - nseg[1])
+          this.overlay_ctx.lineTo(seg[0].x,  seg[0].z - nseg[1])
+          //ctx.stroke()
+          this.overlay_ctx.fill()
+          this.overlay_ctx.closePath()
+          /*
+          const mid = seg[0].add_v(nseg[0].sub_v(seg[0]).div_f(2))
+          this.ctx.moveTo(mid.x, mid.z)
+          this.ctx.lineTo(mid.x, mid.z - 50)
+          this.ctx.stroke()
+          */
+        } else {
+          prev_hide = true
+        }
+      }
+    })
 
     //for(let i=0; i<size; ++i) {
     //  this.ctx.fillStyle = `rgb(${~~los_region[i][1]}, 0, 200)`
@@ -299,8 +433,45 @@ class LightRenderer extends System {
     //}
   }
 
+  get_e_at(world_pos) {
+    const entities = []
+    for (let i=0; i < this.ecs.entities.length; ++i) {
+      const e = this.ecs.entities[i]
+      const t = this.ecs.get_entity_component(e, BaseComponents.TransformComponent)
+      const m = this.ecs.get_entity_component(e, MeshComponent)
+      const b = this.ecs.get_entity_component(e, BaseComponents.BoundsComponent)
+
+      if (!e || !t || !m || !b) { continue }
+
+      const offset = t.pos//.sub_v(b.offset)
+      if (world_pos.x < offset.x - b.width / 2) { continue }
+      if (world_pos.x > offset.x + b.width / 2) { continue }
+      if (world_pos.z < offset.z - b.height / 2) { continue }
+      if (world_pos.z > offset.z + b.height / 2) { continue }
+
+      entities.push([e, t.pos])
+    }
+
+    if (entities.length === 0) { return null }
+    return entities[0][0] 
+
+
+    if (entities.length === 1) { return entities[0][0] }
+
+    //const e = entities.sort((a, b) => {
+    //  return (b[1].x + b[1].y + b[1].z) - (a[1].x + a[1].y + a[1].z)
+    //})[0]
+
+    return null
+    //return e[0]
+  }
+
   set_ctx(ctx) {
     this.ctx = ctx
+    this.overlay_canvas.width = this.ctx.canvas.width
+    this.overlay_canvas.height = this.ctx.canvas.height
+    this.floor_canvas.width = this.ctx.canvas.width
+    this.floor_canvas.height = this.ctx.canvas.height
   }
 
   set_camera(camera) {

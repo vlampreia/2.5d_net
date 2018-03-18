@@ -62,7 +62,7 @@ class CuboidFactory {
     ctx.lineTo(xwidth,          dimensions.y + xwidth * 0.5 + ywidth * 0.5)
     ctx.stroke()
 
-    ctx.globalAlpha = 0.3
+    ctx.globalAlpha = 1 //0.3
     ctx.fill()
 
     r.midpoint.x = canvas_width / 2

@@ -11,17 +11,20 @@ class LightFactory {
     this.ecs = ecs
   }
 
-  make_light(x, y, colour) {
+  make_light(x, y, r, g, b) {
       const e = this.ecs.create_entity()
       const t = this.ecs.set_entity_component(e, new BaseComponents.TransformComponent())
-      const r = this.ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
+      const _r = this.ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
       const l = this.ecs.set_entity_component(e, new Light())
 
       t.pos = new Vector(x, 0, y)
       t.pos_prev = t.pos
       t.pos_next = t.pos
 
-      l.colour = colour
+      l.r = r
+      l.g = g
+      l.b = b
+      l.colour = `rgb(${r}, ${g}, ${b})`
 
       l.renderable = document.createElement('canvas')
       const range = 700
@@ -34,16 +37,16 @@ class LightFactory {
 
       //const gradient = this.ctx.createRadialGradient(v1.x, v1.y * 2, 0, v1.x, v1.y * 2, 1000)
       const gradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, range)
-      gradient.addColorStop(0, colour)
+      gradient.addColorStop(0, l.colour)
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, w, h)
 
-      r.canvas = document.createElement('canvas')
-      ctx = r.canvas.getContext('2d')
+      _r.canvas = document.createElement('canvas')
+      ctx = _r.canvas.getContext('2d')
       ctx.fillStyle = 'rgb(255, 255, 255)'
       ctx.fillRect(0, 0, 3, 3)
-      r.midpoint = new Vector(1, 0, 1)
+      _r.midpoint = new Vector(1, 0, 1)
 
       return e
   }

@@ -123,6 +123,7 @@ class Game {
 
     //this.engine.set_render_hook(this.render_gui.bind(this))
     this.engine.set_pre_render_hook(this.render_stuff.bind(this))
+    this.engine.set_render_hook(this.render_stuff2.bind(this))
     this.engine.set_simulation_hook(this.engine_simulation_hook.bind(this))
 
     const net = this.engine.network
@@ -257,16 +258,16 @@ class Game {
 
   create_lights() {
     const lf = new LightFactory(this.engine.get_ecs())
-    const e = lf.make_light(0, 0, 'rgb(100, 50, 10)')
+    const e = lf.make_light(0, 0, 100, 50, 10)
     this.cursor_light = this.engine._ecs.get_entity_component(e, BaseComponents.TransformComponent)
 
     /* 380 shows bug in shadow? system */
-    //lf.make_light(380, 150, 'rgba(255, 10, 0, 0.8)')
-    //lf.make_light(60, -151, 'rgb(55, 10, 255)')
-    //lf.make_light(-400, -120, 'rgb(255, 205, 100)')
-    //lf.make_light(500, 500, 'rgb(0, 255, 0)')
-    //lf.make_light(-200, 500, 'rgb(0, 255, 0)')
-    //lf.make_light(500, -300, 'rgb(0, 255, 0)')
+    lf.make_light(380, 150,   255, 10, 0)
+    lf.make_light(60, -151,   55, 10, 255)
+    lf.make_light(-400, -120, 255, 205, 100)
+    lf.make_light(500, 500,   0, 255, 0)
+    lf.make_light(-200, 500,  0, 255, 0)
+    lf.make_light(500, -300,  0, 255, 0)
     //
     //make_light(-200, -300, 'rgb(0, 255, 0)')
     //make_light(-220, -300, 'rgb(0, 255, 0)')
@@ -281,7 +282,7 @@ class Game {
 
     cf.make_cuboid(new Vector( 90,   0,  90  ), new Vector(200, 80, 200), 'rgb(100, 255, 100)')
     cf.make_cuboid(new Vector( 330,  0,  90  ), new Vector(40,  10,  40), 'rgb(100, 255, 100)')
-    cf.make_cuboid(new Vector( 330,  0,  140 ), new Vector(20,  10,  20), 'rgb(100, 255, 100)')
+    cf.make_cuboid(new Vector( 331,  0,  141 ), new Vector(20,  10,  20), 'rgb(100, 255, 100)')
     cf.make_cuboid(new Vector(-40,   0,  320 ), new Vector(200, 20, 20), 'rgb(100, 100, 255)')
     cf.make_cuboid(new Vector( 180,  0,  320 ), new Vector(100, 20, 20), 'rgb(100, 100, 255)')
     cf.make_cuboid(new Vector(-40,   0, -450 ), new Vector(200, 50, 10), 'rgb(100, 80, 80)')
@@ -290,10 +291,11 @@ class Game {
     cf.make_cuboid(new Vector(-140,  0, -400 ), new Vector(10,  50, 100), 'rgb(100, 80, 80)')
     cf.make_cuboid(new Vector( 60,   0, -400 ), new Vector(10,  50, 100), 'rgb(100, 80, 80)')
     cf.make_cuboid(new Vector(-30,  60, -400 ), new Vector(200, 10, 100), 'rgb(100, 80, 80)')
-    cf.make_cuboid(new Vector(-500,  0, -200 ), new Vector(20,   10, 2000), 'rgv(100, 100, 100)')
-    cf.make_cuboid(new Vector( 500,  0, -600 ), new Vector(2000, 10, 20), 'rgv(100, 100, 100)')
-    cf.make_cuboid(new Vector( 1000, 0, -200 ), new Vector(20,   10, 2000), 'rgv(100, 100, 100)')
-    cf.make_cuboid(new Vector( 500,  0,  600 ), new Vector(2000, 10, 20), 'rgv(100, 100, 100)')
+    cf.make_cuboid(new Vector(-500,  0, -200 ), new Vector(20,   10, 2000), 'rgb(100, 100, 100)')
+    cf.make_cuboid(new Vector( 500,  0, -600 ), new Vector(2000, 10, 20), 'rgb(100, 100, 100)')
+    cf.make_cuboid(new Vector( 1000, 0, -200 ), new Vector(20,   10, 2000), 'rgb(100, 100, 100)')
+    cf.make_cuboid(new Vector( 500,  0,  600 ), new Vector(2000, 10, 20), 'rgb(100, 100, 100)')
+    //cf.make_cuboid(new Vector( 500, -20, 500), new Vector(2000, 10, 2000), 'rgb(25, 25, 25)')
   }
 
   join_game() {
@@ -593,14 +595,13 @@ class Game {
   }
 
   render_stuff(ctx) {
-    
     for (let i=0; i < this.engine._ecs.entities.length; ++i) {
       const e = this.engine._ecs.entities[i]
       const r = this.engine._ecs.get_entity_component(e, new BaseComponents.RenderableComponent())
       if (!r) { continue }
-      r.visible = true
+      r.visible = false
     }
-    
+
     const meshes = []
     const smeshes = this.engine._ecs.components[MeshComponent.get_type()]
     const transforms = this.engine._ecs.components[BaseComponents.TransformComponent.get_type()]
@@ -655,96 +656,28 @@ class Game {
     this.systems.light_renderer.set_meshes(meshes)
     this.systems.light_renderer.update()
 
-    const vr = this.systems.light_renderer.los_region
-    const vrl = this.systems.light_renderer.los_region_size
-    const visible_segs = {}
+  }
 
-    for (let i=0; i < vrl; ++i) {
-      if (!vr[i][1]) { continue }
+  render_stuff2(ctx) {
+    const overlay = this.systems.light_renderer.overlay_canvas
+    const floor = this.systems.light_renderer.floor_canvas
 
-      const wp = new Vector(vr[i][0].x, 0, vr[i][0].z)
-        .add_v(camera_pos.pos
-          .mul_f(camera_opt.scale)
-          .sub_v(camera_opt.view_centre)
-        )
-        .div_f(camera_opt.scale)
+    //const mask = document.createElement('canvas')
+    //const mask_ctx = mask.getContext('2d')
 
-      const x =  (~~wp.x)
-      const z =  (~~wp.z)
+    //mask_ctx.fillRect(0, 0, overlay.width, overlay.height)
+    //mask_ctx.globalCompositeOperation = 'destination-out'
+    //mask_ctx.drawImage(ctx
 
-      wp.x = ( 2 * z + x) / 2
-      wp.z = ( 2 * z - x) / 2
-
-      const e = this.get_e_at(wp)
-      //const e = this.engine.get_entity_at(wp)
-      if (!e) { continue }
-      //let z = i+1
-      //if ( z == vrl) { z = 0 }
-
-      const m = this.engine._ecs.get_entity_component(e, MeshComponent)
-      if (!m) { continue }
-        /*
-      const r = this.engine._ecs.get_entity_component(e, BaseComponents.RenderableComponent)
-      if (!r) { continue }
-      r.visible = true
-      */
-
-      const h = m.vertices[3].z
-
-      if (!visible_segs[e.id]) {
-        visible_segs[e.id] = []
-      }
-      visible_segs[e.id].push([vr[i][0], h, vr[i][2], vr[i][1])
-
-      ctx.beginPath()
-      ctx.moveTo(vr[i][0].x, vr[i][0].z)
-      //ctx.lineTo(vr[z][0].x, vr[z][0].z)
-      //ctx.lineTo(vr[z][0].x, vr[z][0].z - 50)
-      ctx.lineTo(vr[i][0].x, vr[i][0].z - h)
-      //ctx.fillStyle = `rgb(${~~vr[i][1]}, 0, 200)`
-      ctx.strokeStyle = 'rgb(255, 0, 0)'
-      //ctx.fillRect(vr[i][0].x, vr[i][0].z - 50, 5, 50)
-      ctx.stroke()
-      ctx.closePath()
-    }
-
-    ctx.strokeStyle = 'rgb(0, 0, 255)'
-    //ctx.fillStyle = 'rgb(255,255, 255)'
-    let prev_hide = false
-    Object.keys(visible_segs).forEach((k) => {
-      const esegs = visible_segs[k]
-      //for (let i=0; i<visible_segs.length; ++i) {
-      for (let j=0; j<esegs.length; ++j) {
-        let nj = j + 1
-        if (nj === esegs.length) { nj = 0 }
-        let pj = j - 1
-        if (pj === -1) { pj = esegs.length - 1 }
-        const seg = esegs[j]
-        const nseg = esegs[nj]
-        const pseg = esegs[pj]
-        ctx.fillStyle = 'rgb(255, 255, 255)'
-        ctx.fillText(`${j}`, seg[0].x, seg[0].z)
-        ctx.fillText(`${seg[3]}`, seg[0].x, seg[0].z + 20)
-        if (j === esegs.length - 1) { break }
-        if ((prev_hide) || j===0 || !seg[2] || !nseg[2] || esegs.length === 2) {
-          const ix1 = ~~Math.max(0, seg[3])
-          const ix2 = ~~Math.max(0, nseg[3])
-          const ix = ~~((ix1 + ix2) /2 )
-          ctx.fillStyle = `rgba(${ix}, 0, 0, 1.0)`
-          prev_hide = false
-          ctx.beginPath()
-          ctx.moveTo(seg[0].x, seg[0].z)
-          ctx.lineTo(nseg[0].x, nseg[0].z)
-          ctx.lineTo(nseg[0].x, nseg[0].z - nseg[1])
-          ctx.lineTo(seg[0].x, seg[0].z - nseg[1])
-          //ctx.stroke()
-          ctx.fill()
-          ctx.closePath()
-        } else {
-          prev_hide = true
-        }
-      }
-    })
+    //ctx.globalCompositeOperation = 'multiply'
+    //ctx.fillStyle = 'rgb(0, 0, 0)'
+    //ctx.fillRect(0, 0, overlay.width, overlay.height)
+    //ctx.drawImage(floor, 0, 0)
+    //ctx.globalCompositeOperation = 'screen'
+    //ctx.drawImage(overlay, 0, 0)
+    ctx.globalCompositeOperation = 'normal'
+    ctx.drawImage(floor, 0,0)
+    ctx.drawImage(overlay, 0, 0)
   }
 
   get_e_at(world_pos) {
@@ -786,27 +719,28 @@ class Game {
     bgcanvas.width = window.innerWidth
     bgcanvas.height = window.innerHeight
     //ctx.fillStyle = 'rgb(0, 0, 0)'
-    ctx.fillStyle = 'rgb(15, 13, 13)'
+    //ctx.fillStyle = 'rgb(15, 13, 13)'
+    ctx.fillStyle = 'rgb(0, 0, 0)'
     ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
 
-    for (let i=0; i<8; ++i) {
-      const min = 50
-      const max = 150
-      const a = (i+1) / 9
-      const max_stars = 1000
+    //for (let i=0; i<8; ++i) {
+    //  const min = 50
+    //  const max = 150
+    //  const a = (i+1) / 9
+    //  const max_stars = 1000
 
-      for (let j = 0; j < (8-i) * 500; ++j) {
-        const r = ~~(Math.random() * (max - min + 1)) + min
-        const g = ~~(Math.random() * (max - min + 1)) + min
-        const b = ~~(Math.random() * (max - min + 1)) + min
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`
+    //  for (let j = 0; j < (8-i) * 500; ++j) {
+    //    const r = ~~(Math.random() * (max - min + 1)) + min
+    //    const g = ~~(Math.random() * (max - min + 1)) + min
+    //    const b = ~~(Math.random() * (max - min + 1)) + min
+    //    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`
 
-        const x = ~~(Math.random() * bgcanvas.width)
-        const y = ~~(Math.random() * bgcanvas.height)
+    //    const x = ~~(Math.random() * bgcanvas.width)
+    //    const y = ~~(Math.random() * bgcanvas.height)
 
-        ctx.fillRect(x, y, 1, 1)
-      }
-    }
+    //    ctx.fillRect(x, y, 1, 1)
+    //  }
+    //}
 
     this.engine.renderer.draw_to_background(bgcanvas)
   }
