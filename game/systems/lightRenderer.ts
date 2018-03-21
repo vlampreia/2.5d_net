@@ -4,11 +4,16 @@ import { System } from 'ecs'
 
 import { BaseComponents } from 'engine'
 import MeshComponent from '../components/meshComponent'
+import PolyBoundsComponent from '../components/polyBounds.component'
 import Light from '../components/light.component'
 import Vector from 'common'
 
 const make_isometric = (v) => {
-  return new Vector((v.x - v.z), 0, (v.x + v.z) / 2)
+  return new Vector(
+    (v.x - v.z),
+    0,
+    (v.x + v.z) / 2
+  )
 }
 
 const iso_to_cartesian = (v) => {
@@ -27,12 +32,12 @@ const get_reflected_intensity = (source_vector, surface_vector, surface_normal) 
   const light_intensity = 1
   const diffuse = 1
   return (diffuse * light_intensity )
-    //get_dot_product(
+    //* get_dot_product(
     //  surface_vector.sub_v(source_vector).normalise(),
     //  surface_normal.normalise()
-    //) ///
-  /// (get_distance(source_vector, surface_vector) * 0.01)
-  / (get_distance(source_vector, surface_vector) * 1)
+    //)
+    / (get_distance(source_vector, surface_vector) * 0.010)
+  /// (get_distance(source_vector, surface_vector) * 1)
 }
 
 const get_distance = (v1, v2) => {
@@ -144,7 +149,8 @@ const get_line_of_sight = (v, meshes, los_region, ctx) => {
       if (!t_seg_l_facing && !t_seg_r_facing) { continue }
 
       const targets = new Array(2)
-      targets[0] = [ v1, target_vertex, t_seg_r_norm]
+      const norm = t_seg_l_facing ? t_seg_l_norm : t_seg_r_norm
+      targets[0] = [ v1, target_vertex, norm ]
       let targets_size = 1
 
       if (t_seg_l_facing && !t_seg_r_facing) {
@@ -250,6 +256,10 @@ class LightRenderer extends System {
   camera_offset
   los_region
   los_region_size
+  floor_canvas
+  floor_ctx
+  overlay_canvas
+  overlay_ctx
 
   constructor() {
     super([
@@ -272,6 +282,9 @@ class LightRenderer extends System {
     this.ctx.globalCompositeOperation = 'screen'
     //this.overlay_ctx.clearRect(0, 0, this.overlay_canvas.width, this.overlay_canvas.height)
     this.overlay_ctx.globalCompositeOperation = 'screen'
+//    this.floor_ctx.fillStyle = 'rgb(0, 0, 0)'
+//    this.floor_ctx.fillRect(0, 0, this.floor_canvas.width, this.floor_canvas.height)
+    this.floor_ctx.globalCompositeOperation = 'screen'
     return true
   }
 
@@ -335,6 +348,7 @@ class LightRenderer extends System {
       wp.x = ( 2 * z + x) / 2
       wp.z = ( 2 * z - x) / 2
 
+      /* get height of mesh at point */
       const e = this.get_e_at(wp)
       //const e = this.engine.get_entity_at(wp)
       if (!e) { continue }
@@ -354,20 +368,20 @@ class LightRenderer extends System {
       if (!visible_segs[e.id]) {
         visible_segs[e.id] = []
       }
-      visible_segs[e.id].push([vr[i][0], h, vr[i][2], vr[i][1])
 
-        /*
-      this.ctx.beginPath()
-      this.ctx.moveTo(vr[i][0].x, vr[i][0].z)
-      //ctx.lineTo(vr[z][0].x, vr[z][0].z)
-      //ctx.lineTo(vr[z][0].x, vr[z][0].z - 50)
-      this.ctx.lineTo(vr[i][0].x, vr[i][0].z - h)
-      //ctx.fillStyle = `rgb(${~~vr[i][1]}, 0, 200)`
-      this.ctx.strokeStyle = 'rgb(255, 0, 0)'
-      //ctx.fillRect(vr[i][0].x, vr[i][0].z - 50, 5, 50)
-      this.ctx.stroke()
-      this.ctx.closePath()
-      */
+      visible_segs[e.id].push([vr[i][0], h, vr[i][2], vr[i][1]])
+
+      /* show vertical edges */
+      //this.ctx.beginPath()
+      //this.ctx.moveTo(vr[i][0].x, vr[i][0].z)
+      ////ctx.lineTo(vr[z][0].x, vr[z][0].z)
+      ////ctx.lineTo(vr[z][0].x, vr[z][0].z - 50)
+      //this.ctx.lineTo(vr[i][0].x, vr[i][0].z - h)
+      ////ctx.fillStyle = `rgb(${~~vr[i][1]}, 0, 200)`
+      //this.ctx.strokeStyle = 'rgb(255, 0, 0)'
+      ////ctx.fillRect(vr[i][0].x, vr[i][0].z - 50, 5, 50)
+      //this.ctx.stroke()
+      //this.ctx.closePath()
     }
 
     this.overlay_ctx.strokeStyle = 'rgb(0, 0, 255)'
@@ -389,8 +403,9 @@ class LightRenderer extends System {
         //this.ctx.fillText(`${seg[3]}`, seg[0].x, seg[0].z + 20)
         if (j === esegs.length - 1) { break }
         if ((prev_hide) || j===0 || !seg[2] || !nseg[2] || esegs.length === 2) {
-          const ix1 = seg[3] * 50
-          const ix2 = nseg[3] * 50
+          prev_hide = false
+          const ix1 = seg[3] * 1
+          const ix2 = nseg[3] * 1
           const normal = get_seg_normal(nseg[0], seg[0])
           /* remove walls not facing the camera */
           // XXX: can be optimised to remove the -1 addition
@@ -401,12 +416,15 @@ class LightRenderer extends System {
           if (!facing) { continue }
           //const ix1 = ~~Math.min(255, Math.max(0, seg[3]))
           //const ix2 = ~~Math.min(255, Math.max(0, nseg[3]))
-          const ix = ~~((ix1 + ix2) /2 )
-          const gradient = this.overlay_ctx.createLinearGradient(seg[0].x, 0, nseg[0].x, 0)//Math.abs(nseg[0].sub_v(seg[0]).x), 0)
-          gradient.addColorStop(0, `rgb(${~~(Math.min(light.r, light.r * ix1))}, ${~~(Math.min(light.g, light.g * ix1))}, ${~~(Math.min(light.b, (light.b * ix1))}`)
-          gradient.addColorStop(1, `rgb(${~~(Math.min(light.r, light.r * ix2))}, ${~~(Math.min(light.g, light.g * ix2))}, ${~~(Math.min(light.b, (light.b * ix2))}`)
-          this.overlay_ctx.fillStyle = gradient
-          //ctx.fillStyle = `rgba(${ix}, 0, 0, 1.0)`
+          const ix =((ix1 + ix2) /2 )
+          //const gradient = this.overlay_ctx.createLinearGradient(seg[0].x, 0, nseg[0].x, 0)//Math.abs(nseg[0].sub_v(seg[0]).x), 0)
+          //gradient.addColorStop(0, `rgb(${~~(Math.min(light.r, light.r * ix1))}, ${~~(Math.min(light.g, light.g * ix1))}, ${~~(Math.min(light.b, light.b * ix1))}`)
+          //gradient.addColorStop(1, `rgb(${~~(Math.min(light.r, light.r * ix2))}, ${~~(Math.min(light.g, light.g * ix2))}, ${~~(Math.min(light.b, light.b * ix2))}`)
+          //this.overlay_ctx.fillStyle = gradient
+          this.overlay_ctx.
+            //fillStyle = `rgba(${~~ix}, 0, 0, 1.0)`
+            //fillStyle = `rgb(${~~(Math.min(light.r, light.r * ix))}, ${~~(Math.min(light.g, light.g * ix))}, ${~~(Math.min(light.b, light.b * ix))}`
+            fillStyle = `rgba(${~~(light.r)}, ${~~(light.g)}, ${~~(light.b)}, ${Math.max(0, Math.min(1, ix))}`
           this.overlay_ctx.beginPath()
           this.overlay_ctx.moveTo(seg[0].x,  seg[0].z)
           this.overlay_ctx.lineTo(nseg[0].x, nseg[0].z)
@@ -421,6 +439,9 @@ class LightRenderer extends System {
           this.ctx.lineTo(mid.x, mid.z - 50)
           this.ctx.stroke()
           */
+          //this.overlay_ctx.fillStyle = 'rgb(255, 255, 255)'
+          //this.overlay_ctx.fillText(ix1, seg[0].x,  seg[0].z - nseg[1] - 20)
+          //this.overlay_ctx.fillText(ix2, seg[0].x,  seg[0].z - nseg[1])
         } else {
           prev_hide = true
         }
@@ -434,37 +455,153 @@ class LightRenderer extends System {
   }
 
   get_e_at(world_pos) {
+    // TODO: optimise this with a spacial datastructure
+    // TODO: this does not work with rotated or non rectangular bounds
+
+    const get_intersection_point = (a1, a2, b1, b2) => {
+      const dx = (b2.z - b1.z) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.z - a1.z)
+
+      if (dx === 0) return null
+
+      const t1 = (b2.x - b1.x) * (a1.z - b1.z) - (b2.z - b1.z) * (a1.x - b1.x)
+      const t2 = (a2.x - a1.x) * (a1.z - b1.z) - (a2.z - a1.z) * (a1.x - b1.x)
+
+      if (t1 === 0 || t2 === 0) return null
+
+      const r = t1 / dx
+      const s = t2 / dx
+
+      if ((r > 0 && r < 1) && (s > 0 && s < 1)) {
+        return r
+      }
+
+      return null
+    }
+
+
     const entities = []
-    for (let i=0; i < this.ecs.entities.length; ++i) {
+
+    // cart to iso
+    const rpos = new Vector(
+        (world_pos.x - world_pos.z)     ,
+      0,
+        (world_pos.x + world_pos.z) / 2
+    )
+
+    for (let i = 0; i < this.ecs.entities.length; ++i) {
       const e = this.ecs.entities[i]
+      if (!e) { continue }
+
       const t = this.ecs.get_entity_component(e, BaseComponents.TransformComponent)
-      const m = this.ecs.get_entity_component(e, MeshComponent)
+      if (!t) { continue }
+
       const b = this.ecs.get_entity_component(e, BaseComponents.BoundsComponent)
+      if (!b) { continue }
 
-      if (!e || !t || !m || !b) { continue }
+      const pb = this.ecs.get_entity_component(e, PolyBoundsComponent)
+      if (!pb) { continue }
 
-      const offset = t.pos//.sub_v(b.offset)
-      if (world_pos.x < offset.x - b.width / 2) { continue }
-      if (world_pos.x > offset.x + b.width / 2) { continue }
-      if (world_pos.z < offset.z - b.height / 2) { continue }
-      if (world_pos.z > offset.z + b.height / 2) { continue }
+      const mp = new Vector(
+        (t.pos.x - t.pos.z)    , //- (b.offset.x),
+        0,
+        ((t.pos.x + t.pos.z) / 2 - (b.offset.z)) - t.pos.y
+      )
+      //this.overlay_ctx.strokeStyle = 'rgb(255, 0, 0)'
 
-      entities.push([e, t.pos])
+      //this.overlay_ctx.strokeRect(mp.x + 500 - b.width / 2, mp.z + 400 - b.height / 2, b.width, b.height)
+
+      if (rpos.x < mp.x - b.width / 2) { continue }
+      if (rpos.x > mp.x + b.width / 2) { continue }
+      if (rpos.z < mp.z - b.height / 2) { continue }
+      if (rpos.z > mp.z + b.height / 2) { continue }
+      const make_isometric = (v) => {
+        return new Vector(
+          (v.x - v.z),
+          0,
+          (v.x + v.z) / 2
+        )
+      }
+
+      const ray = [
+        //world_pos,
+        //t.pos.add_v(new Vector(b.width + 1,0,0))
+        rpos,
+        mp.add_v(new Vector(b.width, 0, 0))
+      ]
+
+      //this.overlay_ctx.beginPath()
+      //this.overlay_ctx.moveTo(rpos.x   + 500, rpos.z  + 400)
+      //this.overlay_ctx.lineTo(ray[1].x + 500, ray[1].z + 400)
+      //this.overlay_ctx.stroke()
+
+      let intersections = 0
+      const pb_vertices = pb.get_mesh()
+
+      //this.overlay_ctx.beginPath()
+
+
+      for (let i = 0; i < pb_vertices.length; ++i) {
+        let z = i + 1
+        if (z === pb_vertices.length) { z = 0 }
+
+        const v1 =pb_vertices[i].add_v(make_isometric(t.pos)).sub_v(pb.offset)
+        const v2 =pb_vertices[z].add_v(make_isometric(t.pos)).sub_v(pb.offset)
+
+        //this.overlay_ctx.moveTo(v1.x + 500, v1.z + 400)
+        //this.overlay_ctx.lineTo(v2.x + 500, v2.z + 400)
+
+        if (get_intersection_point(ray[0], ray[1], v1, v2)) { intersections++ }
+      }
+
+      //this.overlay_ctx.stroke()
+
+      if (intersections === 0 || intersections % 2 === 0) { continue }
+
+      entities.push({ e: e, pos: t.pos })
     }
 
     if (entities.length === 0) { return null }
-    return entities[0][0] 
+    return entities[0].e
 
+    const e = entities.sort((a, b) => {
+      return (b.pos.x + b.pos.y + b.pos.z) - (a.pos.x + a.pos.y + a.pos.z)
+    })[0]
 
-    if (entities.length === 1) { return entities[0][0] }
-
-    //const e = entities.sort((a, b) => {
-    //  return (b[1].x + b[1].y + b[1].z) - (a[1].x + a[1].y + a[1].z)
-    //})[0]
-
-    return null
-    //return e[0]
+    return e.e
   }
+
+  //get_e_at(world_pos) {
+  //  const entities = []
+  //  for (let i=0; i < this.ecs.entities.length; ++i) {
+  //    const e = this.ecs.entities[i]
+  //    const t = this.ecs.get_entity_component(e, BaseComponents.TransformComponent)
+  //    const m = this.ecs.get_entity_component(e, MeshComponent)
+  //    const b = this.ecs.get_entity_component(e, BaseComponents.BoundsComponent)
+
+  //    if (!e || !t || !m || !b) { continue }
+
+  //    const offset = t.pos//.sub_v(b.offset)
+  //    if (world_pos.x < offset.x - b.width / 2) { continue }
+  //    if (world_pos.x > offset.x + b.width / 2) { continue }
+  //    if (world_pos.z < offset.z - b.height / 2) { continue }
+  //    if (world_pos.z > offset.z + b.height / 2) { continue }
+
+  //    entities.push([e, t.pos])
+  //  }
+
+  //  if (entities.length === 0) { return null }
+  //  return entities[0][0] 
+
+
+  //  if (entities.length === 1) { return entities[0][0] }
+
+  //  //const e = entities.sort((a, b) => {
+  //  //  return (b[1].x + b[1].y + b[1].z) - (a[1].x + a[1].y + a[1].z)
+  //  //})[0]
+
+  //  return null
+  //  //return e[0]
+  //}
 
   set_ctx(ctx) {
     this.ctx = ctx

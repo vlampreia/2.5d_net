@@ -16,6 +16,7 @@ import PlayerControlledComponent from '../../components/playerControlledComponen
 import WaypointComponent from '../../components/waypointComponent'
 import MeshComponent from '../../components/meshComponent'
 import Light from '../../components/light.component'
+import PolyBoundsComponent from '../../components/polyBounds.component'
 
 import PlayerNetworkUpdateSystem from '../../systems/playernetworkUpdateSystem'
 import TransformFollowerSystem from '../../systems/transformFollowerSystem'
@@ -46,6 +47,8 @@ class Game {
   input_text
   mouse_e_t
   cursor_light
+  buffer_canvas
+  buffer_ctx
     //this.blocks.forEach(b => this.network.enqueue_msg(client_id, 'place_block', { block: b }))
     //this.network.enqueue_msg(client_id, )
     //
@@ -92,6 +95,8 @@ class Game {
     localStorage.debug = 'game*'
     this.engine = new Engine(canvas_element)
 
+    this.engine.ext_entity_getter = this.get_e_at
+
     this.systems = {
       player_network: new PlayerNetworkUpdateSystem(this.event_manager),
       transform_follower: new TransformFollowerSystem(),
@@ -116,6 +121,7 @@ class Game {
       WaypointComponent,
       MeshComponent,
       Light,
+      PolyBoundsComponent,
       //PlayerControlledComponent
     }
     Object.values(this.component_classes)
@@ -254,20 +260,25 @@ class Game {
 
     this.create_boxes()
     this.create_lights()
+    this.buffer_canvas = document.createElement('canvas')
+    this.buffer_ctx = this.buffer_canvas.getContext('2d')
+    this.buffer_canvas.height = window.innerHeight
+    this.buffer_canvas.width = window.innerWidth
   }
 
   create_lights() {
     const lf = new LightFactory(this.engine.get_ecs())
-    const e = lf.make_light(0, 0, 100, 50, 10)
+    const e = lf.make_light(0, 0, 200, 100, 10)
     this.cursor_light = this.engine._ecs.get_entity_component(e, BaseComponents.TransformComponent)
 
     /* 380 shows bug in shadow? system */
     lf.make_light(380, 150,   255, 10, 0)
     lf.make_light(60, -151,   55, 10, 255)
     lf.make_light(-400, -120, 255, 205, 100)
-    lf.make_light(500, 500,   0, 255, 0)
+    lf.make_light(500, 500,   10, 150, 0)
     lf.make_light(-200, 500,  0, 255, 0)
     lf.make_light(500, -300,  0, 255, 0)
+    lf.make_light(-155, 320, 180, 80, 8)
     //
     //make_light(-200, -300, 'rgb(0, 255, 0)')
     //make_light(-220, -300, 'rgb(0, 255, 0)')
@@ -280,21 +291,23 @@ class Game {
   create_boxes() {
     const cf = new CuboidFactory(this.engine.get_ecs())
 
-    cf.make_cuboid(new Vector( 90,   0,  90  ), new Vector(200, 80, 200), 'rgb(100, 255, 100)')
+    cf.make_cuboid(new Vector( 90,   0,  90  ), new Vector(200, 80, 200), 'rgb(44, 40, 4)')
     cf.make_cuboid(new Vector( 330,  0,  90  ), new Vector(40,  10,  40), 'rgb(100, 255, 100)')
     cf.make_cuboid(new Vector( 331,  0,  141 ), new Vector(20,  10,  20), 'rgb(100, 255, 100)')
     cf.make_cuboid(new Vector(-40,   0,  320 ), new Vector(200, 20, 20), 'rgb(100, 100, 255)')
     cf.make_cuboid(new Vector( 180,  0,  320 ), new Vector(100, 20, 20), 'rgb(100, 100, 255)')
-    cf.make_cuboid(new Vector(-40,   0, -450 ), new Vector(200, 50, 10), 'rgb(100, 80, 80)')
-    cf.make_cuboid(new Vector(-100,  0, -350 ), new Vector(80,  50, 10), 'rgb(100, 80, 80)')
-    cf.make_cuboid(new Vector( 30,   0, -350 ), new Vector(80,  50, 10), 'rgb(100, 80, 80)')
-    cf.make_cuboid(new Vector(-140,  0, -400 ), new Vector(10,  50, 100), 'rgb(100, 80, 80)')
-    cf.make_cuboid(new Vector( 60,   0, -400 ), new Vector(10,  50, 100), 'rgb(100, 80, 80)')
-    cf.make_cuboid(new Vector(-30,  60, -400 ), new Vector(200, 10, 100), 'rgb(100, 80, 80)')
-    cf.make_cuboid(new Vector(-500,  0, -200 ), new Vector(20,   10, 2000), 'rgb(100, 100, 100)')
-    cf.make_cuboid(new Vector( 500,  0, -600 ), new Vector(2000, 10, 20), 'rgb(100, 100, 100)')
-    cf.make_cuboid(new Vector( 1000, 0, -200 ), new Vector(20,   10, 2000), 'rgb(100, 100, 100)')
-    cf.make_cuboid(new Vector( 500,  0,  600 ), new Vector(2000, 10, 20), 'rgb(100, 100, 100)')
+    //
+    cf.make_cuboid(new Vector(-40,   0, -450 ), new Vector(200, 50, 10),  'rgb(10, 8, 8)')
+    cf.make_cuboid(new Vector(-100,  0, -350 ), new Vector(80,  50, 10),  'rgb(10, 8, 8)')
+    cf.make_cuboid(new Vector( 30,   0, -350 ), new Vector(80,  50, 10),  'rgb(10, 8, 8)')
+    cf.make_cuboid(new Vector(-140,  0, -400 ), new Vector(10,  50, 100), 'rgb(10, 8, 8)')
+    cf.make_cuboid(new Vector( 60,   0, -400 ), new Vector(10,  50, 100), 'rgb(10, 8, 8)')
+    //cf.make_cuboid(new Vector(-30,  60, -400 ), new Vector(200, 10, 100), 'rgb(100, 80, 80)')
+    //
+    cf.make_cuboid(new Vector(-500,  0, -200 ), new Vector(20,   10, 2000), 'rgb(10, 10, 10)')
+    cf.make_cuboid(new Vector( 500,  0, -600 ), new Vector(2000, 10, 20),   'rgb(10, 10, 10)')
+    cf.make_cuboid(new Vector( 1000, 0, -200 ), new Vector(20,   10, 2000), 'rgb(10, 10, 10)')
+    cf.make_cuboid(new Vector( 500,  0,  600 ), new Vector(2000, 10, 20),   'rgb(10, 10, 10)')
     //cf.make_cuboid(new Vector( 500, -20, 500), new Vector(2000, 10, 2000), 'rgb(25, 25, 25)')
   }
 
@@ -347,11 +360,22 @@ class Game {
       )
       .div_f(camera_opt.scale)
 
-    const x = - ~~world_pos.x / 2
-    const y = ~~world_pos.z
 
-    world_pos.x = -(x - y)
-    world_pos.z = (x + y) 
+    const iso_to_cartesian = (v) => {
+      return new Vector(
+        (2 * v.z + v.x) / 2,
+        0,
+        (2 * v.z - v.x) / 2
+      )
+    }
+
+    world_pos = iso_to_cartesian(world_pos)
+
+    //const x = - ~~world_pos.x / 2
+    //const y = ~~world_pos.z
+
+    //world_pos.x = -(x - y)
+    //world_pos.z = (x + y) 
 
     this.cursor_light.pos.x = world_pos.x
     this.cursor_light.pos.z = world_pos.z
@@ -372,11 +396,10 @@ class Game {
     //const world_pos = this.camera.screen_to_world_pos(this.engine.mouse_pos)
     //  .sub_f(this.cell_width/2)
 
-    const selected_entity = this.engine.get_entity_at(world_pos)
+    //const selected_entity = this.engine.get_entity_at(world_pos)
+    const selected_entity = this.get_e_at(world_pos)
 
-    if (selected_entity) {
-      return this.handle_select_entity(selected_entity)
-    }
+    return this.handle_select_entity(selected_entity)
 
     this.handle_move_entity(this.selected_entity, world_pos)
 
@@ -397,6 +420,11 @@ class Game {
   handle_select_entity(entity) {
     this.selected_entity = entity
     //this.selected_ui.text = 'Selected ' + JSON.stringify(entity)
+    if (!this.selected_entity) {
+      this.selected_ui_txt.set_text('Selected none')
+      return
+    }
+
     this.selected_ui_txt.set_text('Selected ' + JSON.stringify(entity))
 
     const host = this.engine._ecs.get_entity_component(entity, ModuleHostComponent)
@@ -592,6 +620,10 @@ class Game {
 
   resize_listener() {
     this.render_bg()
+    this.buffer_canvas = document.createElement('canvas')
+    this.buffer_ctx = this.buffer_canvas.getContext('2d')
+    this.buffer_canvas.height = window.innerHeight
+    this.buffer_canvas.width = window.innerWidth
   }
 
   render_stuff(ctx) {
@@ -599,7 +631,7 @@ class Game {
       const e = this.engine._ecs.entities[i]
       const r = this.engine._ecs.get_entity_component(e, new BaseComponents.RenderableComponent())
       if (!r) { continue }
-      r.visible = false
+      r.visible = true
     }
 
     const meshes = []
@@ -675,42 +707,140 @@ class Game {
     //ctx.drawImage(floor, 0, 0)
     //ctx.globalCompositeOperation = 'screen'
     //ctx.drawImage(overlay, 0, 0)
+    //
+    this.systems.light_renderer.floor_ctx
+      .globalCompositeOperation = 'destination-out'
+    this.systems.light_renderer.floor_ctx.drawImage(ctx.canvas, 0, 0)
+
+    this.buffer_ctx.globalCompositeOperation = 'normal'
+    this.buffer_ctx.fillStyle = 'rgb(0, 0, 0)'
+    this.buffer_ctx.fillRect(0, 0, this.buffer_canvas.width, this.buffer_canvas.height)
+    this.buffer_ctx.drawImage(ctx.canvas, 0, 0)
+    this.buffer_ctx.globalCompositeOperation = 'normal'
+    this.buffer_ctx.drawImage(floor, 0, 0)
+    this.buffer_ctx.globalCompositeOperation = 'screen'
+    this.buffer_ctx.drawImage(overlay, 0, 0)
     ctx.globalCompositeOperation = 'normal'
-    ctx.drawImage(floor, 0,0)
-    ctx.drawImage(overlay, 0, 0)
+    ctx.fillStyle = 'rgb(0, 0, 0)'
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    ctx.drawImage(this.buffer_canvas, 0, 0)
+    //
+    //const masked_floor = this.buffer_canvas
+    //const x = this.buffer_ctx
+    //x.globalCompositeOperation = 'source-out'
+    //x.drawImage(ctx.canvas, 0, 0)
+    //x.drawImage(floor, 0, 0)
+
+    //ctx.fillStyle='rgb(0, 0,0)'
+    ////ctx.fillRect(0, 0, c.width, c.height)
+    //ctx.globalCompositeOperation = 'screen'
+    //ctx.drawImage(masked_floor, 0, 0)
+    //ctx.drawImage(overlay, 0,0 )
+    //ctx.globalCompositeOperation = 'normal'
+    //ctx.drawImage(floor, 0,0)
+    //ctx.drawImage(overlay, 0, 0)
   }
 
+
   get_e_at(world_pos) {
+    // TODO: optimise this with a spacial datastructure
+    // TODO: this does not work with rotated or non rectangular bounds
+
+    const get_intersection_point = (a1, a2, b1, b2) => {
+      const dx = (b2.z - b1.z) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.z - a1.z)
+
+      if (dx === 0) return null
+
+      const t1 = (b2.x - b1.x) * (a1.z - b1.z) - (b2.z - b1.z) * (a1.x - b1.x)
+      const t2 = (a2.x - a1.x) * (a1.z - b1.z) - (a2.z - a1.z) * (a1.x - b1.x)
+
+      if (t1 === 0 || t2 === 0) return null
+
+      const r = t1 / dx
+      const s = t2 / dx
+
+      if ((r > 0 && r < 1) && (s > 0 && s < 1)) {
+        return r
+      }
+
+      return null
+    }
+
+
     const entities = []
-    for (let i=0; i < this.engine._ecs.entities.length; ++i) {
+
+    // cart to iso
+    const rpos = new Vector(
+        (world_pos.x - world_pos.z)     ,
+      0,
+        (world_pos.x + world_pos.z) / 2
+    )
+
+    for (let i = 0; i < this.engine._ecs.entities.length; ++i) {
       const e = this.engine._ecs.entities[i]
+      if (!e) { continue }
+
       const t = this.engine._ecs.get_entity_component(e, BaseComponents.TransformComponent)
-      const m = this.engine._ecs.get_entity_component(e, MeshComponent)
+      if (!t) { continue }
+
       const b = this.engine._ecs.get_entity_component(e, BaseComponents.BoundsComponent)
+      if (!b) { continue }
 
-      if (!e || !t || !m || !b) { continue }
+      const pb = this.engine._ecs.get_entity_component(e, PolyBoundsComponent)
+      if (!pb) { continue }
 
-      const offset = t.pos//.sub_v(b.offset)
-      if (world_pos.x < offset.x - b.width / 2) { continue }
-      if (world_pos.x > offset.x + b.width / 2) { continue }
-      if (world_pos.z < offset.z - b.height / 2) { continue }
-      if (world_pos.z > offset.z + b.height / 2) { continue }
+      const mp = new Vector(
+        (t.pos.x - t.pos.z)    , //- (b.offset.x),
+        0,
+        ((t.pos.x + t.pos.z) / 2 - (b.offset.z)) - t.pos.y
+      )
 
-      entities.push([e, t.pos])
+      if (rpos.x < mp.x - b.width / 2) { continue }
+      if (rpos.x > mp.x + b.width / 2) { continue }
+      if (rpos.z < mp.z - b.height / 2) { continue }
+      if (rpos.z > mp.z + b.height / 2) { continue }
+      const make_isometric = (v) => {
+        return new Vector(
+          (v.x - v.z),
+          0,
+          (v.x + v.z) / 2
+        )
+      }
+
+      const ray = [
+        //world_pos,
+        //t.pos.add_v(new Vector(b.width + 1,0,0))
+        rpos,
+        mp.add_v(new Vector(b.width, 0, 0))
+      ]
+
+      let intersections = 0
+      const pb_vertices = pb.get_mesh()
+
+      for (let i = 0; i < pb_vertices.length; ++i) {
+        let z = i + 1
+        if (z === pb_vertices.length) { z = 0 }
+
+        const v1 =pb_vertices[i].add_v(make_isometric(t.pos)).sub_v(pb.offset)
+        const v2 =pb_vertices[z].add_v(make_isometric(t.pos)).sub_v(pb.offset)
+
+        if (get_intersection_point(ray[0], ray[1], v1, v2)) { intersections++ }
+      }
+
+      console.log('i ', e.id, intersections)
+      if (intersections === 0 || intersections % 2 === 0) { continue }
+
+      entities.push({ e: e, pos: t.pos })
     }
 
     if (entities.length === 0) { return null }
-    return entities[0][0] 
+    return entities[0].e
 
+    const e = entities.sort((a, b) => {
+      return (b.pos.x + b.pos.y + b.pos.z) - (a.pos.x + a.pos.y + a.pos.z)
+    })[0]
 
-    if (entities.length === 1) { return entities[0][0] }
-
-    //const e = entities.sort((a, b) => {
-    //  return (b[1].x + b[1].y + b[1].z) - (a[1].x + a[1].y + a[1].z)
-    //})[0]
-
-    return null
-    //return e[0]
+    return e.e
   }
 
   render_bg() {
@@ -721,7 +851,7 @@ class Game {
     //ctx.fillStyle = 'rgb(0, 0, 0)'
     //ctx.fillStyle = 'rgb(15, 13, 13)'
     ctx.fillStyle = 'rgb(0, 0, 0)'
-    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
+    //ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
 
     //for (let i=0; i<8; ++i) {
     //  const min = 50

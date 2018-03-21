@@ -38,6 +38,7 @@ class Engine {
   _render_hook_fn
   _pre_render_hook_fn
   show_dbg
+  ext_entity_getter
 
   constructor(canvas_element) {
     this.event_manager = new EventManager()
@@ -208,7 +209,7 @@ class Engine {
     /* render */
     const render_t1 = Date.now()
     this.renderer.clear_buffer()
-    this.renderer.render_bg()
+    //this.renderer.render_bg()
     this.call_pre_render_hook(this.renderer.buffer_ctx)
     this.render_system.update()
     this.call_render_hook(this.renderer.buffer_ctx)
@@ -303,11 +304,35 @@ class Engine {
 //  }
 
   get_entity_at(position) {
+    if (this.ext_entity_getter) { return this.ext_entity_getter(position) }
+
     // TODO: optimise this with a spacial datastructure
     // TODO: this does not work with rotated or non rectangular bounds
 
+    const get_intersection_point = (a1, a2, b1, b2) => {
+      const dx = (b2.z - b1.z) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.z - a1.z)
+
+      if (dx === 0) return null
+
+      const t1 = (b2.x - b1.x) * (a1.z - b1.z) - (b2.z - b1.z) * (a1.x - b1.x)
+      const t2 = (a2.x - a1.x) * (a1.z - b1.z) - (a2.z - a1.z) * (a1.x - b1.x)
+
+      if (t1 === 0 || t2 === 0) return null
+
+      const r = t1 / dx
+      const s = t2 / dx
+
+      if ((r > 0 && r < 1) && (s > 0 && s < 1)) {
+        return r
+      }
+
+      return null
+    }
+
+
     const entities = []
 
+    // cart to iso
     const rpos = new Vector(
         (position.x - position.z)     ,
       0,
@@ -324,11 +349,11 @@ class Engine {
       const b = this._ecs.get_entity_component(e, BaseComponents.BoundsComponent)
       if (!b) { continue }
 
-        const mp = new Vector(
-          (t.pos.x - t.pos.z)    , //- (b.offset.x),
-          0,
-          (t.pos.x + t.pos.z) / 2 - (b.offset.z) - t.pos.y
-        )
+      const mp = new Vector(
+        (t.pos.x - t.pos.z)    , //- (b.offset.x),
+        0,
+        (t.pos.x + t.pos.z) / 2 - (b.offset.z) - t.pos.y
+      )
 
       //console.log(rpos, mp)
 

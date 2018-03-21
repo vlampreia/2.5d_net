@@ -2,6 +2,7 @@
 
 import { BaseComponents } from 'engine'
 import MeshComponent from '../components/meshComponent'
+import PolyBoundsComponent from '../components/polyBounds.component'
 import Vector from 'common'
 
 class CuboidFactory {
@@ -21,9 +22,10 @@ class CuboidFactory {
     const t = this.ecs.set_entity_component(e, new BaseComponents.TransformComponent())
     const r = this.ecs.set_entity_component(e, new BaseComponents.RenderableComponent())
     const mesh = this.ecs.set_entity_component(e, new MeshComponent())
+    const bounds = this.ecs.set_entity_component(e, new PolyBoundsComponent())
     const b = this.ecs.set_entity_component(
       e, 
-      new BaseComponents.BoundsComponent(canvas_width, canvas_height)
+      new BaseComponents.BoundsComponent(canvas_width + 2, canvas_height + 2)
     )
 
     t.time = -1
@@ -65,10 +67,29 @@ class CuboidFactory {
     ctx.globalAlpha = 1 //0.3
     ctx.fill()
 
+    bounds.set_mesh([
+      new Vector(-2,                  0, -2 + ywidth / 2),
+      new Vector(-2,                  0, 2 + ywidth / 2 + dimensions.y),
+      new Vector(-2 + xwidth,              0, 2 + dimensions.y + xwidth * 0.5 + ywidth * 0.5),
+      new Vector(2 + xwidth + ywidth, 0, 2 + dimensions.y + xwidth * 0.5),
+      new Vector(2 + xwidth + ywidth, 0, -2 + xwidth * 0.5),
+      new Vector(ywidth,              0, -2),
+
+      //new Vector(0,               0, ywidth / 2)
+      //new Vector(xwidth,          0, xwidth * 0.5 + ywidth * 0.5)
+      //new Vector(xwidth + ywidth, 0, xwidth * 0.5)
+      //new Vector(xwidth,          0, xwidth * 0.5 + ywidth * 0.5)
+      //new Vector(xwidth,          0, dimensions.y + xwidth * 0.5 + ywidth * 0.5)
+    ])
+
     r.midpoint.x = canvas_width / 2
     r.midpoint.z = canvas_height / 2 + dimensions.y / 2
     mesh.mid = new Vector(r.midpoint.x, 0, r.midpoint.z)
-    b.offset = new Vector(r.midpoint.x, 0, dimensions.z/2)
+    //b.offset = new Vector(r.midpoint.x, 0, dimensions.z/2)
+    //TODO: decomplicate this.... lol
+    b.offset = new Vector(-1 + r.midpoint.x, 0, -1 + (ywidth / 2 - dimensions.z/2 + dimensions.y/2))// - dimensions.z / 2)
+    bounds.offset = new Vector(r.midpoint.x, 0, canvas_height / 2 + dimensions.y / 2)
+    //bounds.offset = new Vector(r.midpoint.x, 0, dimensions.z/2)
 
     return t
   }
