@@ -292,10 +292,10 @@ class Game {
     const cf = new CuboidFactory(this.engine.get_ecs())
 
     cf.make_cuboid(new Vector( 90,   0,  90  ), new Vector(200, 80, 200), 'rgb(44, 40, 4)')
-    cf.make_cuboid(new Vector( 330,  0,  90  ), new Vector(40,  10,  40), 'rgb(100, 255, 100)')
-    cf.make_cuboid(new Vector( 331,  0,  141 ), new Vector(20,  10,  20), 'rgb(100, 255, 100)')
-    cf.make_cuboid(new Vector(-40,   0,  320 ), new Vector(200, 20, 20), 'rgb(100, 100, 255)')
-    cf.make_cuboid(new Vector( 180,  0,  320 ), new Vector(100, 20, 20), 'rgb(100, 100, 255)')
+    cf.make_cuboid(new Vector( 330,  0,  90  ), new Vector(40,  10,  40), 'rgb(10, 25, 10)')
+    cf.make_cuboid(new Vector( 331,  0,  141 ), new Vector(20,  10,  20), 'rgb(10, 25, 10)')
+    cf.make_cuboid(new Vector(-40,   0,  320 ), new Vector(200, 20, 20), 'rgb(10, 10, 55)')
+    cf.make_cuboid(new Vector( 180,  0,  320 ), new Vector(100, 20, 20), 'rgb(10, 10, 55)')
     //
     cf.make_cuboid(new Vector(-40,   0, -450 ), new Vector(200, 50, 10),  'rgb(10, 8, 8)')
     cf.make_cuboid(new Vector(-100,  0, -350 ), new Vector(80,  50, 10),  'rgb(10, 8, 8)')
@@ -594,7 +594,7 @@ class Game {
       case 'TOGGLE_INPUT':
         return this.input_text.set_visible(!this.input_text.is_visible())
       case 'TOGGLE_DEBUG':
-        return this.engine.show_dbg = !this.engine.show_dbg
+        return this.engine.set_ui_dbg(!this.engine.show_dbg)
     }
     //this.show_input = !this.show_input
   }

@@ -111,6 +111,11 @@ class Engine {
     this.show_dbg = false
   }
 
+  set_ui_dbg(enable) {
+    this.show_dbg = enable
+    this.gui_system.show_cursor = this.show_dbg
+  }
+
   get_ecs() {
     return this._ecs
   }
