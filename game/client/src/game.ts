@@ -308,6 +308,8 @@ class Game {
     cf.make_cuboid(new Vector( 500,  0, -600 ), new Vector(2000, 10, 20),   'rgb(10, 10, 10)')
     cf.make_cuboid(new Vector( 1000, 0, -200 ), new Vector(20,   10, 2000), 'rgb(10, 10, 10)')
     cf.make_cuboid(new Vector( 500,  0,  600 ), new Vector(2000, 10, 20),   'rgb(10, 10, 10)')
+
+    cf.make_cuboid(new Vector(250, 0, 100), new Vector(20, 80, 100), 'rgb(20, 20, 40)')
     //cf.make_cuboid(new Vector( 500, -20, 500), new Vector(2000, 10, 2000), 'rgb(25, 25, 25)')
   }
 
